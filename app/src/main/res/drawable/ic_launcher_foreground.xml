@@ -1,0 +1,44 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="46.36"
+    android:viewportHeight="46.36">
+    <group android:name="icon" android:scaleY=".45" android:scaleX=".45" android:pivotY="23.15" android:pivotX="23.15">
+
+        <path android:name="handlesBG" android:fillAlpha="0.32"
+            android:pathData="M10.3,23.18c0,-7.11 5.77,-12.88 12.88,-12.88s12.88,5.77 12.88,12.88 -5.77,12.88 -12.88,12.88 -12.88,-5.77 -12.88,-12.88"
+            android:strokeAlpha="0.32" android:strokeWidth="0">
+            <aapt:attr name="android:fillColor">
+                <gradient android:endX="36.04" android:endY="26.99"
+                    android:startX="11.34" android:startY="19.67" android:type="linear">
+                    <item android:color="#E88E73" android:offset="0"/>
+                    <item android:color="#E88E73" android:offset="1"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+        <path
+            android:pathData="M23.18,8.58c-8.06,0 -14.59,6.53 -14.59,14.59s6.53,14.59 14.59,14.59 14.59,-6.53 14.59,-14.59c0,-8.06 -6.54,-14.58 -14.59,-14.59ZM23.18,34.34c-6.16,0 -11.16,-5 -11.16,-11.16s5,-11.16 11.16,-11.16 11.16,5 11.16,11.16c0,6.16 -5,11.15 -11.16,11.16ZM21.46,3.43v-1.72c0,-0.95 0.77,-1.72 1.72,-1.72s1.72,0.77 1.72,1.72v1.72c0,0.95 -0.77,1.72 -1.72,1.72s-1.72,-0.77 -1.72,-1.72ZM6.79,9.22c-0.67,-0.67 -0.67,-1.76 0,-2.43s1.76,-0.67 2.43,0l1.21,1.21c0.67,0.67 0.67,1.76 0,2.43 -0.67,0.67 -1.76,0.67 -2.43,0l-1.21,-1.21ZM5.15,23.18c0,0.95 -0.77,1.72 -1.72,1.72h-1.72c-0.95,0 -1.72,-0.77 -1.72,-1.72s0.77,-1.72 1.72,-1.72h1.72c0.95,0 1.72,0.77 1.72,1.72ZM10.43,35.93c0.67,0.67 0.67,1.76 0,2.43l-1.21,1.21c-0.69,0.65 -1.77,0.63 -2.43,-0.06 -0.63,-0.66 -0.63,-1.7 0,-2.37l1.21,-1.21c0.67,-0.67 1.76,-0.67 2.43,0ZM24.89,42.92v1.72c0,0.95 -0.77,1.72 -1.72,1.72s-1.72,-0.77 -1.72,-1.72v-1.72c0,-0.95 0.77,-1.72 1.72,-1.72s1.72,0.77 1.72,1.72ZM39.57,37.14c0.69,0.65 0.72,1.74 0.06,2.43s-1.74,0.72 -2.43,0.06c-0.02,-0.02 -0.04,-0.04 -0.06,-0.06l-1.21,-1.21c-0.64,-0.7 -0.6,-1.78 0.1,-2.43 0.66,-0.61 1.67,-0.61 2.33,0l1.21,1.21ZM46.36,23.18c0,0.95 -0.77,1.72 -1.72,1.72h-1.72c-0.95,0 -1.72,-0.77 -1.72,-1.72s0.77,-1.72 1.72,-1.72h1.72c0.95,0 1.72,0.77 1.72,1.72ZM35.93,10.43c-0.67,-0.67 -0.67,-1.76 0,-2.43l1.21,-1.21c0.67,-0.67 1.76,-0.67 2.43,0 0.67,0.67 0.67,1.76 0,2.43h0l-1.21,1.21c-0.67,0.67 -1.76,0.67 -2.43,0h0Z" android:strokeWidth="0">
+            <aapt:attr name="android:fillColor">
+                <gradient android:endX="46.36" android:endY="23.18"
+                    android:startX="0" android:startY="23.18" android:type="linear">
+                    <item android:color="#E88E73" android:offset="0"/>
+                    <item android:color="#E88E73" android:offset="1"/>
+                </gradient>
+            </aapt:attr>
+        </path>
+        <group android:name="minuteHandle" android:pivotX="23.15" android:pivotY="23.15">
+
+            <path android:fillColor="#E88E73"
+                android:pathData="M23.18,16.03L23.18,23.01"
+                android:strokeColor="#E88E73" android:strokeLineCap="round"
+                android:strokeLineJoin="round" android:strokeWidth="3"/>
+        </group>
+        <group android:name="hourHandle" android:pivotX="23.15" android:pivotY="23.15">
+            <path android:fillColor="#E88E73"
+                android:pathData="M23.21,23.15L26.93,26.87"
+                android:strokeColor="#E88E73" android:strokeLineCap="round"
+                android:strokeLineJoin="round" android:strokeWidth="3"/>
+        </group>
+    </group>
+</vector>

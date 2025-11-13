@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">Raise</string>
+    <string name="alarm_ringing_now">Ringing now!</string>
+    <string name="next_ring_less_than_minute">Next ring in less than a minute</string>
+    <string name="editor_field_label">Label</string>
+    <string name="cancel">Cancel</string>
+    <string name="save">Save</string>
+    <string name="repeat_dialog_title">Repeat on</string>
+    <string name="alarm_snoozed_notification_title">Alarm \"%1$s\" Snoozed 💤</string>
+
+    <plurals name="next_ring_minutes">
+        <item quantity="one">Next ring in %d minute</item>
+        <item quantity="other">Next ring in %d minutes</item>
+    </plurals>
+
+    <plurals name="next_ring_hours">
+        <item quantity="one">Next ring in %d hour</item>
+        <item quantity="other">Next ring in %d hours</item>
+    </plurals>
+
+    <plurals name="next_ring_days">
+        <item quantity="one">Next ring in %d day</item>
+        <item quantity="other">Next ring in %d days</item>
+    </plurals>
+    <string name="title_activity_ring">RingActivity</string>
+    <string name="alarm_snoozed_notification_subtitle">it will ring again at %1$s</string>
+    <string name="n_minutes">%1$d Minutes</string>
+    <string name="select_ringtone">Select Ringtone</string>
+    <string name="silent">Silent</string>
+    <string name="editor_time_selector_popup">Select Time</string>
+
+    <plurals name="n_minutes">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+
+</resources>
