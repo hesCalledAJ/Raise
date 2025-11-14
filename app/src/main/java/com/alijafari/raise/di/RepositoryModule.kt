@@ -7,7 +7,7 @@ import com.alijafari.raise.feature_alarm.data.repository.AlarmRepositoryImpl
 import com.alijafari.raise.feature_alarm.domain.repository.AlarmRepository
 import com.alijafari.raise.feature_logs.data.repository.LogRepositoryImpl
 import com.alijafari.raise.feature_logs.domain.repository.LogRepository
-import com.alijafari.raise.feature_ringtone.date.repository.RingtoneRepositoryImpl
+import com.alijafari.raise.feature_ringtone.data.repository.RingtoneRepositoryImpl
 import com.alijafari.raise.feature_ringtone.domain.repository.RingtoneRepository
 import dagger.Module
 import dagger.Provides

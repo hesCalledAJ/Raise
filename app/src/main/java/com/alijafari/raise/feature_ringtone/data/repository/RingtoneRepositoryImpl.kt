@@ -1,4 +1,4 @@
-package com.alijafari.raise.feature_ringtone.date.repository
+package com.alijafari.raise.feature_ringtone.data.repository
 
 import android.content.Context
 import android.media.RingtoneManager
@@ -21,8 +21,15 @@ class RingtoneRepositoryImpl @Inject constructor(
             ringtones.add(RingtoneData(name = title, uri = uri))
         }
 
+        // Adding default if its missing
+        val defaultUri = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)
+        if (defaultUri != null && ringtones.none { it.uri == defaultUri }) {
+            ringtones.add(0, getDeviceDefaultRingtone())
+        }
+
         return ringtones
     }
+
 
     override fun getDeviceDefaultRingtone(): RingtoneData {
         val defaultUri = RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_ALARM)

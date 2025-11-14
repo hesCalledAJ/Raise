@@ -1,5 +1,6 @@
 package com.alijafari.raise.feature_alarm.presentation.editor
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -60,8 +62,8 @@ fun EditorBottomSheet(
     onDismiss: () -> Unit,
 ) {
 
-    val editingAlarmState = viewModel.editingAlarm.collectAsStateWithLifecycle()
-    val editingAlarm = editingAlarmState.value ?: return viewModel.hideEditor().also { onDismiss() }
+    val editingAlarmState by viewModel.editingAlarm.collectAsStateWithLifecycle()
+    val editingAlarm = editingAlarmState ?: return viewModel.hideEditor().also { onDismiss() }
 
     val isUpdating = editingAlarm.id != 0
 
@@ -74,6 +76,14 @@ fun EditorBottomSheet(
         initialHour = editingAlarm.hour, initialMinute = editingAlarm.minute
     )
 
+    LaunchedEffect(editingAlarm) {
+        if (editingAlarm.ringtoneData == null) {
+            viewModel.setEditingAlarmEdit(
+                editingAlarm.copy(ringtoneData = viewModel.deviceDefaultRingtones)
+            )
+        }
+        Log.e("TAG", "EditorBottomSheet: selected ${editingAlarm.ringtoneData}", )
+    }
     AlarmLabelDialog(
         isVisible = isTitleDialogVisible,
         initialValue = editingAlarm.label,
@@ -119,26 +129,24 @@ fun EditorBottomSheet(
             )
         })
 
-    if (editingAlarm.ringtoneData == null) viewModel.setEditingAlarmEdit(
-        editingAlarm.copy(
-            ringtoneData = viewModel.deviceDefaultRingtones
-        )
-    )
     val deviceRingtones by viewModel.deviceRingtones.collectAsState()
-    RingtoneSelectorDialog(
-        isVisible = isRingtoneDialogVisible,
-        selectedRingtone = editingAlarm.ringtoneData,
-        selectedVolume = editingAlarm.ringtoneVolume,
-        onDismiss = {
-            isRingtoneDialogVisible = false
-        },
-        ringtonesList = deviceRingtones
-    ) { ringtone, volume ->
-        viewModel.setEditingAlarmEdit(
-            editingAlarm.copy(
-                ringtoneVolume = volume, ringtoneData = ringtone
+    if ( editingAlarm.ringtoneData != null ) {
+        RingtoneSelectorDialog(
+            isVisible = isRingtoneDialogVisible,
+            selectedRingtone = editingAlarm.ringtoneData,
+            selectedVolume = editingAlarm.ringtoneVolume,
+            onDismiss = {
+                isRingtoneDialogVisible = false
+            },
+            ringtonesList = deviceRingtones,
+            ringtonePreviewPlayer = viewModel.ringtonePreviewPlayer
+        ) { ringtone, volume ->
+            viewModel.setEditingAlarmEdit(
+                editingAlarm.copy(
+                    ringtoneVolume = volume, ringtoneData = ringtone
+                )
             )
-        )
+        }
     }
 
     ModalBottomSheet(

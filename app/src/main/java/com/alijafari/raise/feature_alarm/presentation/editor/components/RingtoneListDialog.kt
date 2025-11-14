@@ -1,12 +1,13 @@
 package com.alijafari.raise.feature_alarm.presentation.editor.components
 
+import android.content.Context
 import android.media.MediaPlayer
+import android.util.Log
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
 import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,15 +36,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alijafari.raise.R
 import com.alijafari.raise.core.ui.components.PopupDialog
+import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePreviewPlayerImpl
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
-
 
 @Composable
 fun RingtoneSelectorDialog(
@@ -52,48 +52,36 @@ fun RingtoneSelectorDialog(
     selectedVolume: Float,
     onDismiss: () -> Unit,
     ringtonesList: List<RingtoneData>,
+    ringtonePreviewPlayer: RingtonePreviewPlayerImpl,
     onSave: (ringtone: RingtoneData?, volume: Float) -> Unit,
 ) {
     var selectedRingtone by remember { mutableStateOf(selectedRingtone) }
     var selectedVolume by remember { mutableStateOf(selectedVolume) }
 
-    val context = LocalContext.current
-    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
     var isPlaying by remember { mutableStateOf(false) }
 
-    // When selected ringtone changes -> pause & release player
-    LaunchedEffect(selectedRingtone) {
-        mediaPlayer?.let {
-            try {
-                it.pause()
-            } catch (_: Throwable) {
-            }
-            try {
-                it.seekTo(0)
-            } catch (_: Throwable) {
-            }
-            try {
-                it.release()
-            } catch (_: Throwable) {
-            }
-        }
-        mediaPlayer = null
+    fun stopPlayer() {
+        ringtonePreviewPlayer.stop()
         isPlaying = false
+    }
+
+    fun playSelected() {
+        selectedRingtone?.let { ringtonePreviewPlayer.play(it,selectedVolume) }
+        isPlaying = true
+    }
+
+    LaunchedEffect(selectedRingtone) {
+        stopPlayer()
+    }
+    LaunchedEffect(isVisible) {
+        if (!isVisible){
+            ringtonePreviewPlayer.stop()
+        }
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            mediaPlayer?.let {
-                try {
-                    it.stop()
-                } catch (_: Throwable) {
-                }
-                try {
-                    it.release()
-                } catch (_: Throwable) {
-                }
-            }
-            mediaPlayer = null
+            stopPlayer()
         }
     }
 
@@ -107,10 +95,6 @@ fun RingtoneSelectorDialog(
         negativeButton = stringResource(R.string.cancel) to onDismiss,
     ) {
         val listState = rememberLazyListState()
-
-        LaunchedEffect(selectedRingtone) {
-            listState.animateScrollToItem(ringtonesList.indexOf(selectedRingtone), 0)
-        }
         LazyColumn(
             state = listState,
             modifier = Modifier
@@ -118,7 +102,8 @@ fun RingtoneSelectorDialog(
                 .clip(shape = RoundedCornerShape(18.dp))
         ) {
             items(ringtonesList) { ringtone ->
-                val isSelected = selectedRingtone == ringtone
+                Log.e("TAG", "RingtoneSelectorDialog: $selectedRingtone $ringtone", )
+                val isSelected = selectedRingtone?.uri == ringtone.uri
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -138,7 +123,9 @@ fun RingtoneSelectorDialog(
                 }
             }
         }
-
+        LaunchedEffect(Unit) {
+            listState.animateScrollToItem(ringtonesList.indexOf(selectedRingtone).takeIf { it >=0 } ?: 0, 0)
+        }
         Spacer(modifier = Modifier.height(7.dp))
 
         Row(
@@ -161,57 +148,33 @@ fun RingtoneSelectorDialog(
                 value = selectedVolume,
                 onValueChange = {
                     selectedVolume = it
-                    mediaPlayer?.setVolume(it, it)
+                    ringtonePreviewPlayer.setVolume(it)
                 }
             )
 
             Spacer(Modifier.width(6.dp))
 
 
-            IconButton(
-                onClick = {
-                    val ringtone = selectedRingtone ?: return@IconButton
-                    if (mediaPlayer == null) {
-                        try {
-                            mediaPlayer = ringtone.uri?.let {
-                                MediaPlayer.create(context, it).apply {
-                                    isLooping = false
-                                    setVolume(selectedVolume, selectedVolume)
-                                }
-                            }
-                        } catch (_: Exception) {
-                        }
-                    }
+            AnimatedImageVector.animatedVectorResource(if (isPlaying) R.drawable.ic_pause_animated else R.drawable.ic_play_animated)
+            IconButton(onClick = {
+                val ringtone = selectedRingtone ?: return@IconButton
 
-                    mediaPlayer?.let { mp ->
-                        if (isPlaying) {
-                            try {
-                                mp.pause()
-                            } catch (_: Throwable) {
-                            }
-                            isPlaying = false
-                        } else {
-                            try {
-                                mp.start()
-                            } catch (_: Throwable) {
-                            }
-                            isPlaying = true
-                        }
-                    }
+                if (isPlaying) {
+                    stopPlayer()
+                } else {
+                    playSelected()
                 }
-            ) {
-                val image =
-                    AnimatedImageVector.animatedVectorResource(if (isPlaying) R.drawable.ic_pause_animated else R.drawable.ic_play_animated)
-                var atEnd by remember { mutableStateOf(false) }
+            }) {
                 Image(
-                    painter = rememberAnimatedVectorPainter(image, atEnd),
-                    contentDescription = "Timer",
-                    modifier = Modifier
-                        .size(25.dp)
-                        .clickable {
-                            atEnd = !atEnd
-                        },
-                    contentScale = ContentScale.Crop,
+                    painter = rememberAnimatedVectorPainter(
+                        AnimatedImageVector.animatedVectorResource(
+                            if (isPlaying) R.drawable.ic_pause_animated
+                            else R.drawable.ic_play_animated
+                        ),
+                        isPlaying
+                    ),
+                    contentDescription = null,
+                    modifier = Modifier.size(25.dp),
                     colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
                 )
             }

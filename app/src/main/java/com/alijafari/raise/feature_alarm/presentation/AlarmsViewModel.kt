@@ -1,10 +1,13 @@
 package com.alijafari.raise.feature_alarm.presentation
 
 import android.annotation.SuppressLint
+import android.media.AudioManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePreviewPlayerImpl
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.domain.usecases.AlarmUseCases
+import com.alijafari.raise.feature_ringtone.data.infrastructure.SystemVolumeManagerImpl
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 import com.alijafari.raise.feature_ringtone.domain.usecases.RingtoneUseCases
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,9 +25,13 @@ import kotlinx.coroutines.withContext
 @SuppressLint("ScheduleExactAlarm")
 @HiltViewModel
 class AlarmsViewModel @Inject constructor(
-    private val useCases: AlarmUseCases,
-    private val ringtoneUseCases: RingtoneUseCases
+    private val useCases : AlarmUseCases,
+    private val ringtoneUseCases : RingtoneUseCases,
+    val ringtonePreviewPlayer : RingtonePreviewPlayerImpl,
+    val systemAudioManager : SystemVolumeManagerImpl
 ) : ViewModel() {
+
+    private val previousSystemVolume = systemAudioManager.getVolumeForType(AudioManager.STREAM_ALARM)
 
     private val _alarms = MutableStateFlow<List<Alarm>>(emptyList())
     val alarms = _alarms
@@ -51,10 +58,12 @@ class AlarmsViewModel @Inject constructor(
 
     fun openEditor(alarm: Alarm?) {
         loadRingtonesIfNeeded()
+        systemAudioManager.setMaxVolumeForType(AudioManager.STREAM_ALARM)
         _editingAlarm.value = alarm ?: Alarm()
     }
 
     fun hideEditor() {
+        systemAudioManager.setVolumeForType(previousSystemVolume,AudioManager.STREAM_ALARM)
         _editingAlarm.value = null
     }
 
