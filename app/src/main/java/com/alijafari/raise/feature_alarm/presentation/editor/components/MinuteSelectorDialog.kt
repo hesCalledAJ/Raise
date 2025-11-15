@@ -85,7 +85,7 @@ fun MinuteRulerPicker(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .onSizeChanged { containerWidthPx = it.width.toFloat() } // container width in px
+            .onSizeChanged { containerWidthPx = it.width.toFloat() }
     ) {
         val itemWidthPx = with(density) { itemWidth.toPx() }
         val centerPadding =
@@ -134,7 +134,6 @@ fun MinuteRulerPicker(
             }
         }
 
-        // Snap animation
         LaunchedEffect(listState.isScrollInProgress, containerWidthPx) {
             snapshotFlow { listState.isScrollInProgress }.collect { scrolling ->
                 if (!scrolling && containerWidthPx > 0) {

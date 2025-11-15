@@ -33,6 +33,7 @@ object NotificationHelper {
         context: Context,
         alarm: Alarm,
         isSnoozed: Boolean = false,
+        hideHeadsUp : Boolean = false
     ): Notification {
         val snoozeIntent = Intent(context, AlarmReceiver::class.java).apply {
             action = AlarmBroadcastEvent.SNOOZE()
@@ -66,7 +67,7 @@ object NotificationHelper {
         val skipSnoozePendingIntent = PendingIntent.getBroadcast(
             context,
             alarm.id,
-            snoozeIntent,
+            skipSnoozeIntent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         val contentPendingIntent = PendingIntent.getActivity(
@@ -101,6 +102,8 @@ object NotificationHelper {
                     addAction(R.drawable.ic_launcher_foreground, "Dismiss", contentPendingIntent)
                     addAction(R.drawable.ic_launcher_foreground, "Snooze", snoozePendingIntent)
                 }
+                setSound(null)
+                setSilent(isSnoozed || hideHeadsUp)
                 build()
             }
     }
@@ -110,7 +113,9 @@ object NotificationHelper {
         notificationManager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID, "Service Channel", NotificationManager.IMPORTANCE_HIGH
-            )
+            ).apply {
+                setSound(null,null)
+            }
         )
     }
 }

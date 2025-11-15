@@ -10,113 +10,66 @@ import androidx.annotation.RequiresPermission
 import com.alijafari.raise.MainActivity
 import com.alijafari.raise.feature_alarm.domain.AlarmScheduler
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
-import com.alijafari.raise.feature_logs.data.repository.LogRepositoryImpl
 import com.alijafari.raise.feature_logs.domain.model.EventLog
+import com.alijafari.raise.feature_logs.domain.repository.LogRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
+import jakarta.inject.Inject
+class AndroidScheduler @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val logRepository: LogRepository,
+    private val alarmManager: AlarmManager
+) : AlarmScheduler {
 
-class AndroidScheduler (
-    private val context: Context
-) : AlarmScheduler{
-    private val logRepository = LogRepositoryImpl()
-    private val alarmManager = context.getSystemService(AlarmManager::class.java)!!
+    private fun buildPendingIntent(alarm: Alarm, offset: Int = 0, isMainActivityIntent: Boolean = false): PendingIntent {
+        val intent = if (isMainActivityIntent) {
+            Intent(context, MainActivity::class.java).putExtra(AlarmIntentExtra.ID(), alarm.id)
+        } else {
+            Intent(context, AlarmReceiver::class.java).apply {
+                action = AlarmBroadcastEvent.RING()
+                putExtra(AlarmIntentExtra.ID(), alarm.id)
+            }
+        }
+        val requestCode = alarm.id + offset
+        val flag = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        return if (isMainActivityIntent) PendingIntent.getActivity(context, requestCode, intent, flag)
+        else PendingIntent.getBroadcast(context, requestCode, intent, flag)
+    }
 
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun schedule(alarm: Alarm) {
-        if (alarm.isEnabled.not()) return
+        if (!alarm.isEnabled) return
         val triggerTime = alarm.getNextTriggerAtMillis()
-        val intent = Intent(context , AlarmReceiver::class.java).apply {
-            action = AlarmBroadcastEvent.RING()
-            putExtra(
-                AlarmIntentExtra.ID(), alarm.id
-            )
-        }
-        val infoIntent = Intent(context , MainActivity::class.java).apply {
-            putExtra(
-                AlarmIntentExtra.ID(), alarm.id
-            )
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context , alarm.id , intent , PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        val infoPendingIntent = PendingIntent.getActivity(
-            context , alarm.id + 6000 , infoIntent , PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
         alarmManager.setAlarmClock(
-            AlarmManager.AlarmClockInfo(triggerTime , infoPendingIntent),
-            pendingIntent
+            AlarmManager.AlarmClockInfo(triggerTime, buildPendingIntent(alarm, 6000, true)),
+            buildPendingIntent(alarm)
         )
-        logRepository.logEvent(
-            EventLog(
-                event = "Alarm Scheduled",
-                info = "AndroidScheduler scheduled $alarm for $triggerTime"
-            )
-        )
+        logRepository.logEvent(EventLog("Alarm Scheduled", "AndroidScheduler scheduled $alarm for $triggerTime"))
     }
+
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun snooze(alarm: Alarm) {
-        if (alarm.isEnabled.not()) return
-        val triggerTime = System.currentTimeMillis() + 60 * 1000 * alarm.snoozeMinutes
-        val intent = Intent(context , AlarmReceiver::class.java).apply {
-            action = AlarmBroadcastEvent.RING()
-            putExtra(
-                AlarmIntentExtra.ID(), alarm.id
-            )
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context , alarm.id + 5000 , intent , PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        if (!alarm.isEnabled) return
+        val triggerTime = System.currentTimeMillis() + 60_000 * alarm.snoozeMinutes
         alarmManager.setExactAndAllowWhileIdle(
-             AlarmManager.RTC_WAKEUP,
+            AlarmManager.RTC_WAKEUP,
             triggerTime,
-            pendingIntent
+            buildPendingIntent(alarm, 5000)
         )
-        logRepository.logEvent(
-            EventLog(
-                event = "Alarm Snooze Scheduled",
-                info = "AndroidScheduler scheduled $alarm for $triggerTime "
-            )
-        )
+        logRepository.logEvent(EventLog("Alarm Snooze Scheduled", "AndroidScheduler scheduled $alarm for $triggerTime"))
     }
+
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun cancelSnooze(alarm: Alarm) {
-        if (alarm.isEnabled.not()) return
-        val intent = Intent(context , AlarmReceiver::class.java).apply {
-            action = AlarmBroadcastEvent.RING()
-            putExtra(
-                AlarmIntentExtra.ID(), alarm.id
-            )
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context , alarm.id + 5000 , intent , PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        alarmManager.cancel(pendingIntent)
-        logRepository.logEvent(
-            EventLog(
-                event = "Snooze Cancelled",
-                info = "AndroidScheduler snooze cancelled for $alarm"
-            )
-        )
+        if (!alarm.isEnabled) return
+        alarmManager.cancel(buildPendingIntent(alarm, 5000))
+        logRepository.logEvent(EventLog("Snooze Cancelled", "AndroidScheduler snooze cancelled for $alarm"))
     }
 
     override fun cancel(alarm: Alarm) {
-        val intent = Intent(context , AlarmReceiver::class.java).apply {
-            putExtra(
-                AlarmIntentExtra.ID(), alarm.id
-            )
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context , alarm.id , intent , PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-        alarmManager.cancel(
-            pendingIntent
-        )
-        logRepository.logEvent(
-            EventLog(
-                event = "Alarm Scheduled",
-                info = "AndroidScheduler cancelled $alarm"
-            )
-        )
+        alarmManager.cancel(buildPendingIntent(alarm))
+        logRepository.logEvent(EventLog("Alarm Cancelled", "AndroidScheduler cancelled $alarm"))
     }
 }

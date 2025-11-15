@@ -55,4 +55,7 @@ class RingViewModel @Inject constructor() : ViewModel() {
     fun onDismiss() {
         serviceRef?.handleDismiss()
     }
+    fun hideHeadsUpNotification(){
+        serviceRef?.hideHeadsUpNotification()
+    }
 }

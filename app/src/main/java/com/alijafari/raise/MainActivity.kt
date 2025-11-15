@@ -2,8 +2,10 @@ package com.alijafari.raise
 
 import android.Manifest
 import android.app.AlarmManager
+import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -16,6 +18,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -30,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.alijafari.raise.core.ui.theme.Wakee2Theme
@@ -40,6 +44,7 @@ import com.alijafari.raise.feature_alarm.presentation.AlarmsScreen
 import com.alijafari.raise.feature_alarm.presentation.AlarmsViewModel
 import com.alijafari.raise.feature_alarm.presentation.editor.EditorBottomSheet
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -47,13 +52,21 @@ class MainActivity : ComponentActivity() {
 
     private var showExactAlarmDialog = mutableStateOf(false)
     private var showNotificationDialog = mutableStateOf(false)
+    private var showFSIDialog = mutableStateOf(false)
 
     override fun onResume() {
         super.onResume()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
             showExactAlarmDialog.value = !alarmManager.canScheduleExactAlarms()
+        }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            val allowed = nm.areNotificationsEnabled() &&
+                    nm.canUseFullScreenIntent()
+
+            showFSIDialog.value = !allowed
         }
     }
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,7 +86,8 @@ class MainActivity : ComponentActivity() {
             Wakee2Theme {
                 PermissionRequiredCheck(
                     exactAlarm = showExactAlarmDialog,
-                    notifications = showNotificationDialog
+                    notifications = showNotificationDialog,
+                    fsi = showFSIDialog
                 )
                 MainScreen(
                     modifier = Modifier,
@@ -137,20 +151,22 @@ fun MainScreen(
 @Composable
 fun PermissionRequiredCheck(
     exactAlarm: MutableState<Boolean>,
-    notifications: MutableState<Boolean>
+    notifications: MutableState<Boolean>,
+    fsi: MutableState<Boolean>,
 ) {
     val context = LocalContext.current
 
     if (exactAlarm.value) {
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Permission Required") },
-            text = { Text("To run alarms correctly, please enable Exact Alarms.") },
+            title = { Text(textAlign = TextAlign.Center,text = "Alarm Permission") },
+            text = { Text(textAlign = TextAlign.Center,text = "Enable Exact Alarms.") },
             confirmButton = {
-                TextButton(onClick = {
+                TextButton({
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
-                        context.startActivity(intent)
+                        context.startActivity(
+                            Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        )
                     }
                 }) { Text("Open Settings") }
             }
@@ -158,20 +174,42 @@ fun PermissionRequiredCheck(
         return
     }
 
-    if (notifications.value) {
+    if (notifications.value && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         val launcher = rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission()
         ) { granted ->
             notifications.value = !granted
         }
+
         AlertDialog(
             onDismissRequest = {},
-            title = { Text("Notifications Needed") },
-            text = { Text("We need notification permission so alarms can alert you.") },
+            title = { Text(textAlign = TextAlign.Center,text = "Notifications Permission") },
+            text = { Text(textAlign = TextAlign.Center,text = "Allow notifications so alarms can alert you.") },
             confirmButton = {
-                TextButton(onClick = {
-                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }) { Text("Allow") }
+                TextButton ( onClick = {launcher.launch(Manifest.permission.POST_NOTIFICATIONS)} ) {
+                    Text("Allow")
+                }
+            }
+        )
+        return
+    }
+
+    if (fsi.value) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text(textAlign = TextAlign.Center,text = "Fullscreen Intent Permission") },
+            text = { Text(textAlign = TextAlign.Center,text = "Allow Fullscreen Interruptions for alarms.") },
+            confirmButton = {
+                TextButton({
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        context.startActivity(
+                            Intent(Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT).apply {
+                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                data = "package:${context.packageName}".toUri()
+                            }
+                        )
+                    }
+                }) { Text("Open Settings") }
             }
         )
         return

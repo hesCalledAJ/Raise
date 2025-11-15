@@ -8,6 +8,7 @@ import com.alijafari.raise.feature_logs.data.repository.LogRepositoryImpl
 import com.alijafari.raise.feature_logs.domain.model.EventLog
 
 enum class AlarmBroadcastEvent(val value: String) {
+    HIDE_HEADS_UP("hide_heads_up"), // to hide the pop up notification when the activity is open
     PREVIEW("preview"),
     SNOOZE("snooze"),
     KILL("kill"),

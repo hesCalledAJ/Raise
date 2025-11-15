@@ -1,7 +1,5 @@
 package com.alijafari.raise.feature_alarm.presentation.editor.components
 
-import android.content.Context
-import android.media.MediaPlayer
 import android.util.Log
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -36,13 +34,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alijafari.raise.R
 import com.alijafari.raise.core.ui.components.PopupDialog
-import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePreviewPlayerImpl
+import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePlayerImpl
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 
 @Composable
@@ -52,7 +49,7 @@ fun RingtoneSelectorDialog(
     selectedVolume: Float,
     onDismiss: () -> Unit,
     ringtonesList: List<RingtoneData>,
-    ringtonePreviewPlayer: RingtonePreviewPlayerImpl,
+    ringtonePreviewPlayer: RingtonePlayerImpl,
     onSave: (ringtone: RingtoneData?, volume: Float) -> Unit,
 ) {
     var selectedRingtone by remember { mutableStateOf(selectedRingtone) }
@@ -102,7 +99,6 @@ fun RingtoneSelectorDialog(
                 .clip(shape = RoundedCornerShape(18.dp))
         ) {
             items(ringtonesList) { ringtone ->
-                Log.e("TAG", "RingtoneSelectorDialog: $selectedRingtone $ringtone", )
                 val isSelected = selectedRingtone?.uri == ringtone.uri
                 Row(
                     Modifier

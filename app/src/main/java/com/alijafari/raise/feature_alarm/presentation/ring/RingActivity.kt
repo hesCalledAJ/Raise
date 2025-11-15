@@ -42,7 +42,6 @@ const val ACTION_FINISH_RING_ACTIVITY = "com.alijafari.wakee2.ACTION_FINISH_RING
 
 @AndroidEntryPoint
 class RingActivity : ComponentActivity() {
-
     @Inject
     lateinit var logRepository: LogRepository
     private var finishReceiver: BroadcastReceiver? = null
@@ -64,7 +63,12 @@ class RingActivity : ComponentActivity() {
             viewModel.detachService()
         }
     }
-
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            viewModel.hideHeadsUpNotification()
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {

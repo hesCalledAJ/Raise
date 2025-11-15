@@ -1,8 +1,10 @@
 package com.alijafari.raise.di
 
+import android.app.AlarmManager
 import android.content.Context
 import com.alijafari.raise.feature_alarm.data.AndroidScheduler
 import com.alijafari.raise.feature_alarm.domain.AlarmScheduler
+import com.alijafari.raise.feature_logs.domain.repository.LogRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,7 +19,9 @@ object AlarmModule {
     @Singleton
     fun provideAlarmScheduler(
         @ApplicationContext context: Context,
+        logRepository: LogRepository,
+        alarmManager : AlarmManager
     ): AlarmScheduler {
-        return AndroidScheduler(context)
+        return AndroidScheduler(context, logRepository , alarmManager)
     }
 }

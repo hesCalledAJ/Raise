@@ -3,9 +3,6 @@ package com.alijafari.raise.feature_alarm.data.service
 import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import android.media.RingtoneManager
 import android.os.Binder
 import android.os.IBinder
 import com.alijafari.raise.feature_alarm.data.AlarmBroadcastEvent
@@ -18,6 +15,8 @@ import com.alijafari.raise.feature_alarm.presentation.ring.ACTION_FINISH_RING_AC
 import com.alijafari.raise.feature_alarm.presentation.ring.RingActivity
 import com.alijafari.raise.feature_logs.domain.model.EventLog
 import com.alijafari.raise.feature_logs.domain.repository.LogRepository
+import com.alijafari.raise.feature_ringtone.domain.infrastructure.RingtonePlayer
+import com.alijafari.raise.feature_ringtone.domain.infrastructure.SystemVolumeManager
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -34,18 +33,24 @@ class AlarmService : Service() {
     @Inject
     lateinit var useCases: AlarmUseCases
 
-    lateinit var mediaPlayer: MediaPlayer
+    @Inject
+    lateinit var ringtonePlayer: RingtonePlayer
+
+    @Inject
+    lateinit var systemVolumeManager: SystemVolumeManager
+
     lateinit var alarm: Alarm
 
-    var alarmId : Int = -1
+    var alarmId: Int = -1
 
-    var isPreview : Boolean = false
+    var isPreview: Boolean = false
 
     private val _isSnoozed = MutableStateFlow(false)
     val isSnoozed: StateFlow<Boolean> = _isSnoozed.asStateFlow()
 
     @Inject
-    lateinit var logRepository : LogRepository
+    lateinit var logRepository: LogRepository
+
     private val scope = CoroutineScope(Dispatchers.IO)
 
     inner class AlarmBinder : Binder() {
@@ -87,8 +92,8 @@ class AlarmService : Service() {
         return START_STICKY
     }
 
-    private fun abort(reason : String) {
-        logStep(tag = "Service Abort" , step = "Reason : $reason")
+    private fun abort(reason: String) {
+        logStep(tag = "Service Abort", step = "Reason : $reason")
         stopService()
     }
 
@@ -96,7 +101,7 @@ class AlarmService : Service() {
         logStep("Ring started for id $alarmId")
         startActivity(
             Intent(
-                applicationContext , RingActivity::class.java
+                applicationContext, RingActivity::class.java
             ).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
@@ -106,7 +111,7 @@ class AlarmService : Service() {
                 _isSnoozed.value = false
                 try {
                     alarm.toString()
-                } catch (_: UninitializedPropertyAccessException){
+                } catch (_: UninitializedPropertyAccessException) {
                     alarm = useCases.getById(alarmId)
                 }
                 logStep("Alarm Initialized $alarm")
@@ -114,10 +119,11 @@ class AlarmService : Service() {
                 ringAlarm()
             } catch (e: Exception) {
                 logError("Error initializing alarm: ${e.message}", e)
-                abort(e.message ?: "Error initializing alarm" )
+                abort(e.message ?: "Error initializing alarm")
             }
         }
     }
+
     private fun handlePreview() {
         isPreview = true
         handleRing()
@@ -128,7 +134,7 @@ class AlarmService : Service() {
         _isSnoozed.value = true
         logStep("Snooze pressed for id ${alarm.id}")
 
-        try { mediaPlayer.stop() } catch (_: Exception) {}
+        ringtonePlayer.stop()
         useCases.snooze(alarm)
 
         updateNotification()
@@ -141,51 +147,37 @@ class AlarmService : Service() {
 
     @SuppressLint("ScheduleExactAlarm")
     fun handleSkipSnooze() {
+        logStep("handleSkipSnooze")
         useCases.cancelSnooze(alarm)
         handleRing()
     }
 
     private fun ringAlarm() {
-        mediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(
-                AudioAttributes.Builder().apply {
-                    setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    setUsage(AudioAttributes.USAGE_ALARM)
-                }.build()
-            )
+        if (alarm.ringtoneData == null) return
+        systemVolumeManager.setMaxVolumeForType()
 
-            try {
-                setDataSource(applicationContext, alarm.ringtoneData?.uri?:RingtoneManager.getActualDefaultRingtoneUri(applicationContext, RingtoneManager.TYPE_ALARM))
-                setOnPreparedListener {
-                    logStep("MediaPlayer Prepared . Starting")
-                    start()
-                }
-
-                setOnErrorListener { mp, what, extra ->
-                    logStep("Error with media player, what=$what, extra=$extra")
-                    false
-                }
-                prepareAsync()
-                isLooping = true
-            } catch (e: Exception) {
-                logStep("Error setting up media player: ${e.message}")
-                e.printStackTrace()
-            }
-        }
+        logStep("ring alarm")
+        ringtonePlayer.play(
+            alarm.ringtoneData!!, alarm.ringtoneVolume, 30000
+        )
     }
 
-    private fun updateNotification() {
-        startForeground(1, getAlarmNotification(applicationContext, alarm , isSnoozed.value))
+    private fun updateNotification(hideHeadsUp: Boolean = false) {
+        startForeground(
+            1,
+            getAlarmNotification(applicationContext, alarm, isSnoozed.value, hideHeadsUp)
+        )
     }
-    fun stopService(){
+
+    fun hideHeadsUpNotification() {
+        logStep("hideHeadsUpNotification")
+        updateNotification(true)
+    }
+
+    fun stopService() {
         logStep("Alarm Service Stop")
         sendFinishRingActivityBroadcast()
-        try {
-            mediaPlayer.stop()
-            mediaPlayer.release()
-        } catch (e: Exception) {
-            logError("Error while stopping and releasing media player" , e)
-        }
+        ringtonePlayer.stop()
         stopSelf()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
@@ -200,17 +192,16 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         logStep("Alarm Service Destroyed")
-        try {
-            mediaPlayer.stop()
-            mediaPlayer.release()
-        } catch (_: Exception) { }
+        ringtonePlayer.stop()
         scope.cancel()
         super.onDestroy()
     }
-    fun logError(reason : String ,error : Throwable) {
-        logRepository.logError(reason,error)
+
+    fun logError(reason: String, error: Throwable) {
+        logRepository.logError(reason, error)
     }
-    fun logStep(step: String ,tag : String = "Service Step") {
+
+    fun logStep(step: String, tag: String = "Service Step") {
         logRepository.logEvent(
             EventLog(
                 event = ">$tag",

@@ -4,7 +4,7 @@ import android.annotation.SuppressLint
 import android.media.AudioManager
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePreviewPlayerImpl
+import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePlayerImpl
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.domain.usecases.AlarmUseCases
 import com.alijafari.raise.feature_ringtone.data.infrastructure.SystemVolumeManagerImpl
@@ -27,7 +27,7 @@ import kotlinx.coroutines.withContext
 class AlarmsViewModel @Inject constructor(
     private val useCases : AlarmUseCases,
     private val ringtoneUseCases : RingtoneUseCases,
-    val ringtonePreviewPlayer : RingtonePreviewPlayerImpl,
+    val ringtonePreviewPlayer : RingtonePlayerImpl,
     val systemAudioManager : SystemVolumeManagerImpl
 ) : ViewModel() {
 

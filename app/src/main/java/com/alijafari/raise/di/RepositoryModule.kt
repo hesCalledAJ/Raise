@@ -19,7 +19,6 @@ import jakarta.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
-
     @Provides
     @Singleton
     fun provideAlarmRepository(dao: AlarmDao): AlarmRepository = AlarmRepositoryImpl(dao)

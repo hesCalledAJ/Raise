@@ -12,6 +12,7 @@ class RingtoneRepositoryImpl @Inject constructor(
     private val ringtoneManager: RingtoneManager
 ) : RingtoneRepository {
     override suspend fun getDeviceRingtones(): List<RingtoneData> {
+        ringtoneManager.setType(RingtoneManager.TYPE_ALARM)
         val cursor = ringtoneManager.cursor
         val ringtones = mutableListOf<RingtoneData>()
 

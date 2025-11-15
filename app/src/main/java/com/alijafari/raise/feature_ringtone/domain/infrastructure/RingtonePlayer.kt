@@ -2,8 +2,8 @@ package com.alijafari.raise.feature_ringtone.domain.infrastructure
 
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 
-interface RingtonePreviewPlayer {
-    fun play(ringtone: RingtoneData, volume: Float)
+interface RingtonePlayer {
+    fun play(ringtone: RingtoneData, volume: Float , fadeInMs: Long? = null)
     fun stop()
     fun setVolume(volume: Float)
 }

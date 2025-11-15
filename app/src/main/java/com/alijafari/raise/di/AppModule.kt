@@ -1,11 +1,12 @@
 package com.alijafari.raise.di
 
+import android.app.AlarmManager
 import android.content.Context
 import android.media.AudioManager
 import android.media.RingtoneManager
-import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePreviewPlayerImpl
+import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePlayerImpl
 import com.alijafari.raise.feature_ringtone.data.infrastructure.SystemVolumeManagerImpl
-import com.alijafari.raise.feature_ringtone.domain.infrastructure.RingtonePreviewPlayer
+import com.alijafari.raise.feature_ringtone.domain.infrastructure.RingtonePlayer
 import com.alijafari.raise.feature_ringtone.domain.infrastructure.SystemVolumeManager
 import dagger.Module
 import dagger.Provides
@@ -23,7 +24,7 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideRingtonePreviewPlayerImpl(@ApplicationContext context: Context) : RingtonePreviewPlayer = RingtonePreviewPlayerImpl(context)
+    fun provideRingtonePreviewPlayerImpl(@ApplicationContext context: Context) : RingtonePlayer = RingtonePlayerImpl(context)
 
     @Provides
     @Singleton
@@ -32,4 +33,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideAudioManager(@ApplicationContext context: Context) : AudioManager = context.getSystemService(AudioManager::class.java)
+
+
+    @Provides
+    @Singleton
+    fun provideAlarmManager(@ApplicationContext context: Context) : AlarmManager = context.getSystemService(AlarmManager::class.java)
 }
