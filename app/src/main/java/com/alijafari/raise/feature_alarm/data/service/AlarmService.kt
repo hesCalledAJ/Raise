@@ -106,20 +106,38 @@ class AlarmService : Service() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             }
         )
+        _isSnoozed.value = false
         scope.launch {
             try {
-                _isSnoozed.value = false
-                try {
-                    alarm.toString()
-                } catch (_: UninitializedPropertyAccessException) {
-                    alarm = useCases.getById(alarmId)
-                }
-                logStep("Alarm Initialized $alarm")
+                initializeAlarm()
                 updateNotification()
                 ringAlarm()
             } catch (e: Exception) {
                 logError("Error initializing alarm: ${e.message}", e)
                 abort(e.message ?: "Error initializing alarm")
+            }
+        }
+    }
+
+    private suspend fun initializeAlarm() {
+        try {
+            alarm.toString()
+        } catch (_: UninitializedPropertyAccessException) {
+            alarm = useCases.getById(alarmId)
+        }
+        logStep("Alarm Initialized $alarm")
+        rescheduleAlarmRepeats()
+    }
+
+    @SuppressLint("ScheduleExactAlarm")
+    private fun rescheduleAlarmRepeats() {
+
+        logStep("Repeat Scheduled ${alarm.repeatDays}")
+        if (alarm.repeatDays.isEmpty()) {
+            useCases.schedule(alarm)
+        }else {
+            scope.launch {
+                useCases.upsert(alarm.copy(isEnabled = false))
             }
         }
     }
@@ -158,7 +176,7 @@ class AlarmService : Service() {
 
         logStep("ring alarm")
         ringtonePlayer.play(
-            alarm.ringtoneData!!, alarm.ringtoneVolume, 30000
+            alarm.ringtoneData!!, alarm.ringtoneVolume, 30000 , alarm.vibrate
         )
     }
 

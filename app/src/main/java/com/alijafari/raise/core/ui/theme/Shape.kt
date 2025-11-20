@@ -35,24 +35,6 @@ fun AlarmCard(
         label = ""
     )
 
-    val containerColor by animateColorAsState(
-        targetValue = if (enabled)
-            MaterialTheme.colorScheme.primary
-        else
-            MaterialTheme.colorScheme.surfaceVariant,
-        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
-        label = ""
-    )
-
-    val contentColor by animateColorAsState(
-        targetValue = if (enabled)
-            MaterialTheme.colorScheme.onPrimary
-        else
-            MaterialTheme.colorScheme.onSurfaceVariant,
-        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
-        label = ""
-    )
-
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(
