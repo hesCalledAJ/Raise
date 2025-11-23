@@ -14,10 +14,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 enum class CardPosition { FIRST, MIDDLE, LAST ,ONLY}
-
 @Composable
 fun AlarmCard(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
     position: CardPosition,
     enabled: Boolean,
     onClick: () -> Unit,
@@ -26,13 +25,31 @@ fun AlarmCard(
     val topRadius by animateDpAsState(
         targetValue = if (position in listOf(CardPosition.FIRST, CardPosition.ONLY)) 18.dp else 4.dp,
         animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
-        label = ""
+        label = "topRadius"
     )
 
     val bottomRadius by animateDpAsState(
         targetValue = if (position in listOf(CardPosition.LAST, CardPosition.ONLY)) 18.dp else 4.dp,
         animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
-        label = ""
+        label = "bottomRadius"
+    )
+
+    val containerColor by animateColorAsState(
+        targetValue = if (enabled)
+            MaterialTheme.colorScheme.primary
+        else
+            MaterialTheme.colorScheme.surfaceVariant,
+        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+        label = "containerColor"
+    )
+
+    val contentColor by animateColorAsState(
+        targetValue = if (enabled)
+            MaterialTheme.colorScheme.onPrimary
+        else
+            MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(durationMillis = 600, easing = LinearOutSlowInEasing),
+        label = "contentColor"
     )
 
     Card(
@@ -44,21 +61,13 @@ fun AlarmCard(
             bottomEnd = bottomRadius
         ),
         colors = CardColors(
-            containerColor = if (enabled)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = if (enabled)
-                MaterialTheme.colorScheme.onPrimary
-            else
-                MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = containerColor,
+            contentColor = contentColor,
+            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         ),
         enabled = true,
-        onClick = {
-            onClick()
-        },
+        onClick = onClick,
         content = content
     )
 }

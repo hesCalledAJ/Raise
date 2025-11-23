@@ -27,12 +27,12 @@ fun TimeText(
 
     Row(
         modifier = modifier.wrapContentSize(),
-        verticalAlignment = Alignment.Bottom
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = String.format("%02d:%02d", displayHour, alarm.minute),
-            style = MaterialTheme.typography.displayMedium.copy(
-                fontWeight = if (alarm.isEnabled) FontWeight.Bold else FontWeight.Normal,
+            style = MaterialTheme.typography.displayLarge.copy(
+                fontWeight = if (alarm.isEnabled) FontWeight.Bold else FontWeight.Normal
             )
         )
         if (!is24hours) {

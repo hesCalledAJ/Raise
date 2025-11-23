@@ -112,7 +112,7 @@ class RingtonePlayerImpl @Inject constructor(
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val timings = longArrayOf(0, 150, 200, 150, 800)
+            val timings = longArrayOf(0, 150, 200, 150, 1500)
             val amplitudes = intArrayOf(0, 180, 0, 255, 0)
 
             val effect = VibrationEffect.createWaveform(timings, amplitudes, 0)
