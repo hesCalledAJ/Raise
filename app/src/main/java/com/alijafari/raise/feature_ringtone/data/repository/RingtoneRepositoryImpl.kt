@@ -6,13 +6,18 @@ import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 import com.alijafari.raise.feature_ringtone.domain.repository.RingtoneRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import java.lang.Exception
 
 class RingtoneRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val ringtoneManager: RingtoneManager
 ) : RingtoneRepository {
     override suspend fun getDeviceRingtones(): List<RingtoneData> {
-        ringtoneManager.setType(RingtoneManager.TYPE_ALARM)
+        try {
+            ringtoneManager.setType(RingtoneManager.TYPE_ALARM)
+        }catch (_: Exception){
+
+        }
         val cursor = ringtoneManager.cursor
         val ringtones = mutableListOf<RingtoneData>()
 

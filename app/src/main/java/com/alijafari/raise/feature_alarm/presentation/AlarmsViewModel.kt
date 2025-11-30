@@ -2,6 +2,7 @@ package com.alijafari.raise.feature_alarm.presentation
 
 import android.annotation.SuppressLint
 import android.media.AudioManager
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alijafari.raise.feature_ringtone.data.infrastructure.RingtonePlayerImpl
@@ -68,7 +69,9 @@ class AlarmsViewModel @Inject constructor(
     }
 
     fun setEditingAlarmEdit(newInstance : Alarm){
-        _editingAlarm.value = newInstance
+        _editingAlarm.value = newInstance.also {
+            Log.e("TAG", "saveEditingAlarm: ${editingAlarm.value}", )
+        }
     }
 
     fun toggleAlarm(alarm: Alarm) {

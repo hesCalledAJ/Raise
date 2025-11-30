@@ -99,24 +99,23 @@ class AlarmService : Service() {
 
     private fun handleRing() {
         logStep("Ring started for id $alarmId")
-        startActivity(
-            Intent(
-                applicationContext, RingActivity::class.java
-            ).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            }
-        )
-        _isSnoozed.value = false
         scope.launch {
             try {
                 initializeAlarm()
                 updateNotification()
                 ringAlarm()
+                startActivity(
+                    Intent(
+                        applicationContext, RingActivity::class.java
+                    ).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    }
+                )
             } catch (e: Exception) {
-                logError("Error initializing alarm: ${e.message}", e)
                 abort(e.message ?: "Error initializing alarm")
             }
         }
+        _isSnoozed.value = false
     }
 
     private suspend fun initializeAlarm() {

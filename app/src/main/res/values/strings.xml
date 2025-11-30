@@ -28,6 +28,9 @@
     <string name="select_ringtone">Select Ringtone</string>
     <string name="silent">Silent</string>
     <string name="editor_time_selector_popup">Select Time</string>
+    <string name="snooze">Snooze</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="snoozed">Snoozed</string>
 
     <plurals name="n_minutes">
         <item quantity="one">%d Minute</item>

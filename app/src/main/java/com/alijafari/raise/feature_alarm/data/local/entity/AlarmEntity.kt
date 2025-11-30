@@ -36,5 +36,8 @@ data class AlarmEntity(
     val vibrate : Boolean,
 
     @ColumnInfo(name = "ringtoneData")
-    val ringtoneData : RingtoneData?
+    val ringtoneData : RingtoneData?,
+
+    @ColumnInfo(name = "ringtoneVolume", defaultValue = "0.6")
+    val ringtoneVolume : Float,
 )

@@ -12,7 +12,8 @@ fun AlarmEntity.toDomain(): Alarm = Alarm(
     snoozeCount = snoozeCount,
     snoozeMinutes = snoozeMinutes,
     ringtoneData = ringtoneData,
-    vibrate = vibrate
+    vibrate = vibrate,
+    ringtoneVolume = ringtoneVolume
 )
 
 fun Alarm.toEntity(): AlarmEntity = AlarmEntity(
@@ -25,5 +26,6 @@ fun Alarm.toEntity(): AlarmEntity = AlarmEntity(
     snoozeCount = snoozeCount,
     snoozeMinutes = snoozeMinutes,
     ringtoneData = ringtoneData,
-    vibrate = vibrate
+    vibrate = vibrate,
+    ringtoneVolume = ringtoneVolume
 )
