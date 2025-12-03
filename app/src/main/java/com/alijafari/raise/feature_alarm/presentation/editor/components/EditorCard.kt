@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,10 @@ fun EditorCard(
     title: String?,
     position: CardPosition,
     onClick: ()->Unit,
+    colors : CardColors = CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ),
     content: @Composable () -> Unit,
 ) {
     Card(
@@ -40,10 +45,7 @@ fun EditorCard(
                 ) 8.dp else 4.dp
             )
             .height(45.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        ),
+        colors = colors,
         shape = RoundedCornerShape(
             topEnd = if (position in listOf(CardPosition.FIRST, CardPosition.ONLY)) 15.dp else 5.dp,
             topStart = if (position in listOf(
