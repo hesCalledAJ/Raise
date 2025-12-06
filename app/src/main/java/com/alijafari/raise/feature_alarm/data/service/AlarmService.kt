@@ -43,6 +43,8 @@ class AlarmService : Service() {
 
     var alarmId: Int = -1
 
+    var actualTriggerMillis : Long = 0 // is used for in calculation of next trigger time correctly when smart offset has been used
+
     var isPreview: Boolean = false
 
     private val _isSnoozed = MutableStateFlow(false)
@@ -65,6 +67,8 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
         alarmId = intent?.getIntExtra(AlarmIntentExtra.ID(), -1) ?: -1
+        actualTriggerMillis = intent?.getLongExtra(AlarmIntentExtra.ACTUAL_TRIGGER_MILLIS(), -1) ?: -1
+
         logStep("Start command with intent ${intent?.action} for id $alarmId")
 
         if (intent?.action == null || alarmId == -1) {
@@ -125,15 +129,14 @@ class AlarmService : Service() {
             alarm = useCases.getById(alarmId)
         }
         logStep("Alarm Initialized $alarm")
-        rescheduleAlarmRepeats()
+        if (!isPreview) rescheduleAlarmRepeats()
     }
 
     @SuppressLint("ScheduleExactAlarm")
     private fun rescheduleAlarmRepeats() {
-
         logStep("Repeat Scheduled ${alarm.repeatDays}")
         if (alarm.repeatDays.isEmpty()) {
-            useCases.schedule(alarm)
+            useCases.schedule(alarm,actualTriggerMillis)
         }else {
             scope.launch {
                 useCases.upsert(alarm.copy(isEnabled = false))

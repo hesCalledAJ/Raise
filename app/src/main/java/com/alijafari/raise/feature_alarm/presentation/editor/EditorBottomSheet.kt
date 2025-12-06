@@ -3,11 +3,6 @@ package com.alijafari.raise.feature_alarm.presentation.editor
 import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,15 +27,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,12 +42,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -61,14 +54,17 @@ import com.alijafari.raise.R
 import com.alijafari.raise.core.ui.theme.CardPosition
 import com.alijafari.raise.core.utils.WeekdayUtils.formatSelectedDays
 import com.alijafari.raise.core.utils.getRelativeNextRingText
+import com.alijafari.raise.core.utils.makeOffsetSubtitle
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.presentation.AlarmsViewModel
 import com.alijafari.raise.feature_alarm.presentation.components.TimeText
 import com.alijafari.raise.feature_alarm.presentation.editor.components.AlarmLabelDialog
 import com.alijafari.raise.feature_alarm.presentation.editor.components.EditorCard
 import com.alijafari.raise.feature_alarm.presentation.editor.components.MinuteSelectorDialog
+import com.alijafari.raise.feature_alarm.presentation.editor.components.OffsetSelectorDialog
 import com.alijafari.raise.feature_alarm.presentation.editor.components.RepeatDaysDialog
 import com.alijafari.raise.feature_alarm.presentation.editor.components.RingtoneSelectorDialog
+import com.alijafari.raise.feature_alarm.presentation.editor.components.TimeBombDialog
 import com.alijafari.raise.feature_alarm.presentation.editor.components.TimePickerDialog
 import kotlin.math.roundToInt
 
@@ -169,13 +165,47 @@ fun EditorBottomSheet(
         }
     }
 
+    var isOffsetDialogVisible by rememberSaveable { mutableStateOf(false) }
+    var isTimeBombDialogVisible by rememberSaveable { mutableStateOf(false) }
+
+    TimeBombDialog(
+        isVisible = isTimeBombDialogVisible,
+        initialDelay = editingAlarm.timeBombData.delaySeconds,
+        onDismiss = { isTimeBombDialogVisible = false },
+        onSave = { seconds ->
+            viewModel.setEditingAlarmEdit(
+                editingAlarm.copy(
+                    timeBombData = editingAlarm.timeBombData.copy(
+                        delaySeconds = seconds
+                    )
+                )
+            )
+            isTimeBombDialogVisible = false
+        }
+    )
+    OffsetSelectorDialog(
+        isVisible = isOffsetDialogVisible,
+        initialRange = editingAlarm.smartOffsetData.range,
+        onDismiss = { isOffsetDialogVisible = false },
+        onSave = {
+            viewModel.setEditingAlarmEdit(
+                editingAlarm.copy(
+                    smartOffsetData = editingAlarm.smartOffsetData.copy(range = it)
+                )
+            )
+            isOffsetDialogVisible = false
+        }
+    )
+
+
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp)
+            modifier = Modifier.padding(horizontal = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
                 modifier = Modifier
@@ -194,7 +224,9 @@ fun EditorBottomSheet(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = LocalContext.current.getRelativeNextRingText(editingAlarm.getNextTriggerAtMillis()),
+                        text = LocalContext.current.getRelativeNextRingText(
+                            editingAlarm.getNextActualTriggerAtMillis()
+                        ),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -214,7 +246,7 @@ fun EditorBottomSheet(
             Spacer(modifier = Modifier.height(11.dp))
             Column(
                 Modifier
-                    .weight(1f,fill = false)
+                    .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState())
             )
             {
@@ -272,7 +304,7 @@ fun EditorBottomSheet(
                         isRepeatDialogVisible = true
                     },
                     icon = painterResource(R.drawable.ic_vibrate),
-                    title = "Vibrate",
+                    title = stringResource(R.string.editor_vibrate_title),
                     position = CardPosition.LAST
                 ) {
                     Switch(
@@ -287,29 +319,17 @@ fun EditorBottomSheet(
                         })
                 }
 
-                AnimatedContent(isExpanded) { expanded ->
-                    Box {
-                        this@Column.AnimatedVisibility(expanded.not()) {
-                            Box {
-                                ShadowedSeparator(modifier = Modifier.offset(y = 4.dp))
+
+                    Box() {
+                        this@Column.AnimatedVisibility(isExpanded.not()) {
+                            Box(Modifier.fillMaxWidth()) {
                                 EditorCard(
                                     modifier = Modifier
-                                        .fillMaxWidth(.96f)
-                                        .offset(y = 4.dp)
-                                        .zIndex(-1f)
-                                        .align(Alignment.Center),
-                                    onClick = {},
-                                    icon = null,
-                                    title = "",
-                                    position = CardPosition.ONLY
-                                ) {}
-                                ShadowedSeparator(modifier = Modifier.offset(y = 7.dp))
-                                EditorCard(
-                                    modifier = Modifier
-                                        .fillMaxWidth(.92f)
+                                        .fillMaxWidth(.94f)
                                         .offset(y = 7.dp)
-                                        .zIndex(-2f)
-                                        .align(Alignment.Center),
+                                        .zIndex(-1f)
+                                        .align(Alignment.Center)
+                                        .alpha(.7f),
                                     onClick = {},
                                     icon = null,
                                     title = "",
@@ -325,14 +345,14 @@ fun EditorBottomSheet(
                                 isExpanded = isExpanded.not()
                             },
                             icon = painterResource(R.drawable.ic_plus),
-                            title = "More",
-                            position = if (expanded) CardPosition.FIRST else CardPosition.ONLY,
+                            title = stringResource(R.string.editor_more_title),
+                            position = if (isExpanded) CardPosition.FIRST else CardPosition.ONLY,
                             colors = CardDefaults.cardColors(
-                                containerColor = if (expanded) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                                contentColor = if (expanded) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                                containerColor = if (isExpanded) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                contentColor = if (isExpanded) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         ) {
-                            if (expanded.not()) {
+                            if (isExpanded.not()) {
                                 Row {
                                     Icon(
                                         modifier = Modifier.size(20.dp),
@@ -354,51 +374,98 @@ fun EditorBottomSheet(
                                     )
                                 }
                             } else Text(
-                                "Hide"
+                                stringResource(R.string.editor_hide_more)
                             )
                         }
                     }
-                }
+
                 AnimatedVisibility(isExpanded) {
                     Column() {
+//                        EditorCard(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .zIndex(2f),
+//                            icon = painterResource(R.drawable.ic_challenge),
+//                            title = stringResource(R.string.editor_challenges_title),
+//                            position = CardPosition.MIDDLE,
+//                        ) {
+//                            Text(text = stringResource(R.string.silent))
+//                        }
+                        val context = LocalContext.current
                         EditorCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .zIndex(2f),
-                            onClick = {
-                                isExpanded = isExpanded.not()
-                            },
-                            icon = painterResource(R.drawable.ic_challenge),
-                            title = "Challenges",
-                            position = CardPosition.MIDDLE,
-                        ) {
-                            Text(text = stringResource(R.string.silent))
-                        }
-                        EditorCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .zIndex(2f),
-                            onClick = {
-                                isExpanded = isExpanded.not()
-                            },
                             icon = painterResource(R.drawable.ic_timer),
-                            title = "Smart Delay",
+                            title = stringResource(R.string.editor_offset_title),
+                            subTitle = editingAlarm.makeOffsetSubtitle(context),
                             position = CardPosition.MIDDLE,
+                            onClick = {
+                                isOffsetDialogVisible = true
+                            }
                         ) {
-                            Text(text = stringResource(R.string.silent))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                VerticalDivider(
+                                    Modifier.height(22.dp),
+                                    2.dp,
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Switch(
+                                    modifier = Modifier.height(24.dp),
+                                    checked = editingAlarm.smartOffsetData.enabled,
+                                    onCheckedChange = {
+                                        viewModel.setEditingAlarmEdit(
+                                            editingAlarm.copy(
+                                                smartOffsetData = editingAlarm.smartOffsetData.copy(
+                                                    enabled = it
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                            }
                         }
                         EditorCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .zIndex(2f),
-                            onClick = {
-                                isExpanded = isExpanded.not()
-                            },
                             icon = painterResource(R.drawable.ic_bomb),
-                            title = "Loud Bomb",
+                            title = stringResource(R.string.editor_loud_title),
+                            subTitle = stringResource(
+                                R.string.editor_loud_bomb_delay_description,
+                                editingAlarm.timeBombData.delaySeconds
+                            ),
                             position = CardPosition.LAST,
+                            onClick = {
+                                isTimeBombDialogVisible = true
+                            }
                         ) {
-                            Text(text = stringResource(R.string.silent))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                VerticalDivider(
+                                    Modifier.height(22.dp),
+                                    2.dp,
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Switch(
+                                    modifier = Modifier.height(24.dp),
+                                    checked = editingAlarm.timeBombData.enabled,
+                                    onCheckedChange = {
+                                        viewModel.setEditingAlarmEdit(
+                                            editingAlarm.copy(
+                                                timeBombData = editingAlarm.timeBombData.copy(
+                                                    enabled = it
+                                                )
+                                            )
+                                        )
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -440,23 +507,4 @@ fun EditorBottomSheet(
             }
         }
     }
-}
-
-@Composable
-fun ShadowedSeparator(
-    modifier: Modifier = Modifier,
-    color: Color = Color.Black,
-    alpha: Float = 0.1f,
-    height: Dp = 8.dp
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(color.copy(alpha = alpha), Color.Transparent)
-                )
-            )
-    )
 }

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "d0f192384d70b16f1368c769a1e19ad4",
+    "identityHash": "824c1d202738b3bb976e9c62571b07c7",
     "entities": [
       {
         "tableName": "alarms",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `hour` INTEGER NOT NULL, `minute` INTEGER NOT NULL, `label` TEXT NOT NULL, `is_enabled` INTEGER NOT NULL, `repeat_days` TEXT NOT NULL, `snooze_count` INTEGER NOT NULL, `snooze_minutes` INTEGER NOT NULL, `vibrate` INTEGER NOT NULL, `ringtoneData` TEXT)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `hour` INTEGER NOT NULL, `minute` INTEGER NOT NULL, `label` TEXT NOT NULL, `is_enabled` INTEGER NOT NULL, `repeat_days` TEXT NOT NULL, `snooze_count` INTEGER NOT NULL, `snooze_minutes` INTEGER NOT NULL, `vibrate` INTEGER NOT NULL, `ringtoneData` TEXT, `ringtoneVolume` REAL NOT NULL DEFAULT 0.6, `offsetData` TEXT NOT NULL, `timeBombData` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -66,6 +66,25 @@
             "fieldPath": "ringtoneData",
             "columnName": "ringtoneData",
             "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ringtoneVolume",
+            "columnName": "ringtoneVolume",
+            "affinity": "REAL",
+            "notNull": true,
+            "defaultValue": "0.6"
+          },
+          {
+            "fieldPath": "offsetData",
+            "columnName": "offsetData",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timeBombData",
+            "columnName": "timeBombData",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -78,7 +97,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd0f192384d70b16f1368c769a1e19ad4')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '824c1d202738b3bb976e9c62571b07c7')"
     ]
   }
 }

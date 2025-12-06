@@ -31,6 +31,17 @@
     <string name="snooze">Snooze</string>
     <string name="dismiss">Dismiss</string>
     <string name="snoozed">Snoozed</string>
+    <string name="editor_vibrate_title">Vibrate</string>
+    <string name="editor_more_title">More</string>
+    <string name="editor_hide_more">Hide</string>
+    <string name="editor_challenges_title">Challenges</string>
+    <string name="editor_offset_title">Smart Offset</string>
+    <string name="editor_loud_title">Loud Bomb</string>
+    <string name="editor_offset_sub">Shifts the alarm randomly for a gentler wake-up</string>
+    <string name="editor_offset_sub_enabled">Shifts the alarm from %1$s to %2$s for a gentler wake-up</string>
+    <string name="editor_loud_bomb_delay_title">Time Bomb</string>
+    <string name="editor_loud_bomb_delay_description">Plays a loud sound after %ds if alarm is being ignored</string>
+    <string name="seconds">%d Seconds</string>
 
     <plurals name="n_minutes">
         <item quantity="one">%d Minute</item>

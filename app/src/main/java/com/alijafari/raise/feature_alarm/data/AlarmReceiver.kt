@@ -16,7 +16,8 @@ enum class AlarmBroadcastEvent(val value: String) {
     operator fun invoke() = value
 }
 enum class AlarmIntentExtra(val value: String) {
-    ID("id");
+    ID("id"),
+    ACTUAL_TRIGGER_MILLIS("actual_trigger_millis");
     operator fun invoke() = value
 }
 

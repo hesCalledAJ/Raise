@@ -20,16 +20,22 @@ class AndroidScheduler @Inject constructor(
     private val alarmManager: AlarmManager
 ) : AlarmScheduler {
 
-    private fun buildPendingIntent(alarm: Alarm, offset: Int = 0, isMainActivityIntent: Boolean = false): PendingIntent {
+    private fun buildPendingIntent(
+        alarm: Alarm,
+        actualScheduleMillis: Long? = null,
+        idOffset: Int = 0,
+        isMainActivityIntent: Boolean = false
+    ): PendingIntent {
         val intent = if (isMainActivityIntent) {
             Intent(context, MainActivity::class.java).putExtra(AlarmIntentExtra.ID(), alarm.id)
         } else {
             Intent(context, AlarmReceiver::class.java).apply {
                 action = AlarmBroadcastEvent.RING()
                 putExtra(AlarmIntentExtra.ID(), alarm.id)
+                putExtra(AlarmIntentExtra.ACTUAL_TRIGGER_MILLIS(), actualScheduleMillis)
             }
         }
-        val requestCode = alarm.id + offset
+        val requestCode = alarm.id + idOffset
         val flag = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         return if (isMainActivityIntent) PendingIntent.getActivity(context, requestCode, intent, flag)
         else PendingIntent.getBroadcast(context, requestCode, intent, flag)
@@ -37,14 +43,25 @@ class AndroidScheduler @Inject constructor(
 
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
-    override fun schedule(alarm: Alarm) {
+    override fun schedule(alarm: Alarm, actualTriggerMillis: Long?) {
         if (!alarm.isEnabled) return
-        val triggerTime = alarm.getNextTriggerAtMillis()
+
+        val triggerTime = alarm.getNextActualTriggerAtMillis(actualTriggerMillis)
+        val triggerTimePlusOffset = triggerTime + alarm.getRandomSmartOffsetMillis()
+
         alarmManager.setAlarmClock(
-            AlarmManager.AlarmClockInfo(triggerTime, buildPendingIntent(alarm, 6000, true)),
-            buildPendingIntent(alarm)
+            AlarmManager.AlarmClockInfo(
+                triggerTimePlusOffset ,buildPendingIntent(
+                    alarm = alarm,
+                    actualScheduleMillis = triggerTime,
+                    idOffset = 6000,
+                    isMainActivityIntent = true
+                )
+            ),
+            buildPendingIntent(alarm, triggerTime)
         )
-        logRepository.logEvent(EventLog("Alarm Scheduled", "AndroidScheduler scheduled $alarm for $triggerTime"))
+
+        logRepository.logEvent(EventLog("Alarm Scheduled", "AndroidScheduler scheduled $alarm for $triggerTimePlusOffset"))
     }
 
     @SuppressLint("ScheduleExactAlarm")

@@ -36,7 +36,7 @@ class AlarmsViewModel @Inject constructor(
 
     private val _alarms = MutableStateFlow<List<Alarm>>(emptyList())
     val alarms = _alarms
-        .map { list -> list.sortedBy { it.getNextTriggerAtMillis() }.sortedByDescending { it.isEnabled } }
+        .map { list -> list.sortedBy { it.getNextActualTriggerAtMillis() }.sortedByDescending { it.isEnabled } }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val _editingAlarm = MutableStateFlow<Alarm?>(null)

@@ -38,7 +38,7 @@ class DeleteAlarmUseCase(private val repo: AlarmRepository) {
 class ScheduleAlarmUseCase(private val scheduler: AlarmScheduler) {
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
-    operator fun invoke(alarm: Alarm) = scheduler.schedule(alarm)
+    operator fun invoke(alarm: Alarm, actualTriggerMillis: Long ? = null) = scheduler.schedule(alarm,actualTriggerMillis)
 }
 
 class CancelAlarmUseCase(private val scheduler: AlarmScheduler) {

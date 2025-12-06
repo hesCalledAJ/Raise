@@ -3,11 +3,28 @@ package com.alijafari.raise.core.utils
 import android.content.Context
 import com.alijafari.raise.R
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
+import com.alijafari.raise.feature_alarm.domain.model.OffsetData
 import java.util.Calendar
 import java.util.Locale
+import kotlin.random.Random
 
 fun getTimeString(hour : Int , minute : Int) = String.format("%02d:%02d", hour, minute)
 fun Alarm.getTimeString() = getTimeString(hour,minute)
+fun Alarm.makeOffsetSubtitle(context: Context): String {
+    return if (!smartOffsetData.enabled) {
+        "Shifts the alarm randomly for a gentler wake-up"
+        context.getString(R.string.editor_offset_sub)
+    } else {
+        val start = (minute + smartOffsetData.range.first).let {
+            getTimeString(hour + it / 60, (it % 60 + 60) % 60)
+        }
+        val end = (minute + smartOffsetData.range.last).let {
+            getTimeString(hour + it / 60, (it % 60 + 60) % 60)
+        }
+        context.getString(R.string.editor_offset_sub_enabled,start,end)
+    }
+}
+
 fun Context.getRelativeNextRingText(nextTriggerMillis: Long): String {
     val now = System.currentTimeMillis()
     val diffMillis = nextTriggerMillis - now
