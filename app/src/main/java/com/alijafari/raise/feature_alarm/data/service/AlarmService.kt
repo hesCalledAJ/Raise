@@ -47,6 +47,7 @@ class AlarmService : Service() {
 
     var isPreview: Boolean = false
 
+    var snoozeUntil: Long = -1
     private val _isSnoozed = MutableStateFlow(false)
     val isSnoozed: StateFlow<Boolean> = _isSnoozed.asStateFlow()
 
@@ -151,6 +152,10 @@ class AlarmService : Service() {
 
     @SuppressLint("ScheduleExactAlarm")
     fun handleSnooze() {
+        val next = useCases.snooze(alarm)
+        snoozeUntil = next
+
+        updateNotification()
         _isSnoozed.value = true
         logStep("Snooze pressed for id ${alarm.id}")
 
@@ -169,7 +174,7 @@ class AlarmService : Service() {
     fun handleSkipSnooze() {
         logStep("handleSkipSnooze")
         useCases.cancelSnooze(alarm)
-        handleRing()
+        handleDismiss()
     }
 
     private fun ringAlarm() {

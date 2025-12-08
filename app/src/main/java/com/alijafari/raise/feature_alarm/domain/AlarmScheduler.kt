@@ -9,7 +9,7 @@ interface AlarmScheduler {
     )
     fun snooze(
         alarm: Alarm
-    )
+    ) : Long
     fun cancelSnooze(
         alarm: Alarm
     )

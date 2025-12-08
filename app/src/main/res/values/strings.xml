@@ -30,7 +30,7 @@
     <string name="editor_time_selector_popup">Select Time</string>
     <string name="snooze">Snooze</string>
     <string name="dismiss">Dismiss</string>
-    <string name="snoozed">Snoozed</string>
+    <string name="snoozed">Snoozed until:</string>
     <string name="editor_vibrate_title">Vibrate</string>
     <string name="editor_more_title">More</string>
     <string name="editor_hide_more">Hide</string>

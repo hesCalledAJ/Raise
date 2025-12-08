@@ -4,9 +4,22 @@ import android.content.Context
 import com.alijafari.raise.R
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.domain.model.OffsetData
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import java.util.Calendar
 import java.util.Locale
 import kotlin.random.Random
+
+fun Alarm.getSnoozedTimeString(): String {
+    val calendar = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        add(Calendar.MINUTE, snoozeMinutes)
+    }
+    val newHour = calendar.get(Calendar.HOUR_OF_DAY)
+    val newMinute = calendar.get(Calendar.MINUTE)
+    return getTimeString(newHour, newMinute)
+}
 
 fun getTimeString(hour : Int , minute : Int) = String.format("%02d:%02d", hour, minute)
 fun Alarm.getTimeString() = getTimeString(hour,minute)
@@ -89,4 +102,10 @@ object WeekdayUtils {
         }
     }
 
+}
+suspend fun tickerFlow(period: Long) = flow {
+    while (true) {
+        emit(Unit)
+        delay(period)
+    }
 }

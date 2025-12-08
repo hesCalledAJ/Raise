@@ -1,5 +1,6 @@
 package com.alijafari.raise.feature_alarm.presentation.ring
 
+import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -10,6 +11,8 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -41,7 +44,7 @@ enum class RingDragState {
 
 private const val SNOOZE_THRESHOLD_DP = 140
 private const val MAX_SHEET_FRACTION = 0.6f
-private const val SHEET_STAY_OPEN_THRESHOLD = 0.7f
+private const val SHEET_STAY_OPEN_THRESHOLD = 0.8f
 private const val DISMISS_DELAY_MS = 800L
 
 
@@ -55,9 +58,10 @@ class RingScreenState(
 ) {
     private val _dragOffset = Animatable(0f)
     private val _sheetFraction = Animatable(0f)
+    // add these
+    val dragOffsetState: State<Float> = derivedStateOf { _dragOffset.value }
+    val sheetFractionState: State<Float> = derivedStateOf { _sheetFraction.value }
 
-    val dragOffset: Flow<Float> = snapshotFlow { _dragOffset.value }
-    val sheetFraction: Flow<Float> = snapshotFlow { _sheetFraction.value }
 
     var isDragging by mutableStateOf(false)
 
@@ -98,12 +102,13 @@ class RingScreenState(
         isDragging = false
         scope.launch {
             if (_dragOffset.value >= dragThresholdPx) {
-                delay(DISMISS_DELAY_MS)
-                onSnooze()
+                scope.launch {
+                    delay(DISMISS_DELAY_MS)
+                    onSnooze()
+                }
             } else if (_dragOffset.value < 0f) {
                 bottomSheetRelease()
             }
-
             _dragOffset.animateTo(
                 0f, spring(
                     dampingRatio = Spring.DampingRatioNoBouncy,
@@ -131,7 +136,7 @@ class RingScreenState(
                     stiffness = Spring.StiffnessLow
                 )
             )
-            if (shouldStayOpen){
+            if (shouldStayOpen) {
                 dismissRequested()
             }
         }
@@ -143,31 +148,34 @@ class RingScreenState(
     }
 
     private fun computeDragState(
-        isDragging: Boolean,
         dragOffset: Float,
+        isDragging: Boolean,
         sheetFraction: Float,
         dragThresholdPx: Float,
-        maxSheetFraction: Float
+        maxSheetFraction: Float,
     ): RingDragState = when {
+
         sheetFraction >= maxSheetFraction * SHEET_STAY_OPEN_THRESHOLD -> RingDragState.DRAGGING_UP_DONE
         !isDragging && dragOffset == 0f -> RingDragState.IDLE
         dragOffset >= dragThresholdPx -> RingDragState.DRAGGING_DOWN_DONE
         dragOffset > 0 -> RingDragState.DRAGGING_DOWN
         dragOffset < 0 -> RingDragState.DRAGGING_UP
+
         else -> RingDragState.IDLE
     }
 }
 
 @Composable
 fun rememberRingScreenState(
-    scope: CoroutineScope = rememberCoroutineScope(),
+    isSnoozed: Boolean,
+    onSnooze: () -> Unit,
     screenHeightPx: Float,
     dragThresholdPx: Float,
-    maxSheetFraction: Float = MAX_SHEET_FRACTION,
-    onSnooze: () -> Unit,
-    onDismissOrSkip: () -> Unit
+    onDismissOrSkip: () -> Unit,
+    scope: CoroutineScope = rememberCoroutineScope(),
+    maxSheetFraction: Float = MAX_SHEET_FRACTION
 ): RingScreenState =
-    remember(scope, screenHeightPx, dragThresholdPx, maxSheetFraction, onSnooze, onDismissOrSkip) {
+    remember(isSnoozed,scope, screenHeightPx, dragThresholdPx, maxSheetFraction, onSnooze, onDismissOrSkip) {
         RingScreenState(
             scope,
             screenHeightPx,
@@ -188,6 +196,8 @@ fun RingScreen(
     modifier: Modifier = Modifier,
     alarm: Alarm?,
     isSnoozed: Boolean,
+    snoozeRemaining: Long? = null,
+    snoozeUntil: Long? = null,
     onDismiss: () -> Unit,
     onSkipSnooze: () -> Unit,
     onSnooze: () -> Unit,
@@ -198,13 +208,14 @@ fun RingScreen(
     val dragThresholdPx = remember { with(density) { SNOOZE_THRESHOLD_DP.dp.toPx() } }
 
     val state = rememberRingScreenState(
+        isSnoozed = isSnoozed,
         screenHeightPx = screenHeightPx,
         dragThresholdPx = dragThresholdPx,
         onSnooze = onSnooze,
         onDismissOrSkip = { if (isSnoozed) onSkipSnooze() else onDismiss() }
     )
 
-    val dragOffset by state.dragOffset.collectAsState(0f)
+    val dragOffset by remember { state.dragOffsetState }
     val effectiveSheetFraction by state.effectiveSheetFraction
     val screenState by state.screenState
 
@@ -229,8 +240,14 @@ fun RingScreen(
                 maxDismissSheetFraction = MAX_SHEET_FRACTION,
                 screenHeightPx = screenHeightPx,
                 effectiveDismissSheetFraction = effectiveSheetFraction,
+                snoozedUntil = snoozeUntil,
+                snoozeRemaining = snoozeRemaining,
             )
 
+            LaunchedEffect(effectiveSheetFraction,state) {
+                Log.e("DEBUG", "RS: ${state.screenState.value.name}", )
+                Log.e("DEBUG", "RS: $effectiveSheetFraction", )
+            }
             DismissBottomSheet(
                 effectiveSheetFraction = effectiveSheetFraction,
                 state = state,

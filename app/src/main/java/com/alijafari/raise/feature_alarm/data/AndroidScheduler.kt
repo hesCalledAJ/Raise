@@ -66,8 +66,8 @@ class AndroidScheduler @Inject constructor(
 
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
-    override fun snooze(alarm: Alarm) {
-        if (!alarm.isEnabled) return
+    override fun snooze(alarm: Alarm) : Long{
+        if (!alarm.isEnabled) return -1
         val triggerTime = System.currentTimeMillis() + 60_000 * alarm.snoozeMinutes
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
@@ -75,6 +75,7 @@ class AndroidScheduler @Inject constructor(
             buildPendingIntent(alarm, 5000)
         )
         logRepository.logEvent(EventLog("Alarm Snooze Scheduled", "AndroidScheduler scheduled $alarm for $triggerTime"))
+        return triggerTime
     }
 
     @SuppressLint("ScheduleExactAlarm")

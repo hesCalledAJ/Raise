@@ -1,5 +1,6 @@
 package com.alijafari.raise.feature_alarm.presentation.ring.components
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -56,6 +58,11 @@ fun DismissBottomSheet(
                 onDragDown = onDragDown,
                 onRelease = onRelease
             ) {
+
+                LaunchedEffect(effectiveSheetFraction,state) {
+                    Log.e("DEBUG", "DMBS: ${state.screenState.value.name}", )
+                    Log.e("DEBUG", "DMBS: $effectiveSheetFraction", )
+                }
                 Column(
                     modifier = Modifier
                         .padding(14.dp)
@@ -98,7 +105,9 @@ private fun BottomSheetOverlay(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(with(LocalDensity.current) { sheetHeightPx.toDp() })
+            .height(with(LocalDensity.current) { sheetHeightPx.toDp() }.also {
+                Log.e("DEBUG", "BottomSheetOverlay: $it", )
+            })
             .background(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)

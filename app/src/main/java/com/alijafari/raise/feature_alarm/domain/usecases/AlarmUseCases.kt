@@ -50,7 +50,7 @@ class CancelAlarmUseCase(private val scheduler: AlarmScheduler) {
 class SnoozeAlarmUseCase(private val scheduler: AlarmScheduler) {
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
-    operator fun invoke(alarm: Alarm) = scheduler.snooze(alarm)
+    operator fun invoke(alarm: Alarm) : Long = scheduler.snooze(alarm)
 }
 
 class CancelSnoozeAlarmUseCase(private val scheduler: AlarmScheduler) {
