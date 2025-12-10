@@ -56,7 +56,7 @@ fun SnoozeTopShape(
     }
 
     val scale = if (dragOffset < dragThresholdPx / 2) 1f else animateFloatAsState(
-        targetValue = if (screenState == RingDragState.DRAGGING_DOWN_DONE) .94f else 1f,
+        targetValue = if (screenState == RingDragState.DRAGGING_DOWN_DONE) .85f else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioHighBouncy,
             stiffness = 500f

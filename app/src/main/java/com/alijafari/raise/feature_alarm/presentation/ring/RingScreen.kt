@@ -42,6 +42,7 @@ enum class RingDragState {
     IDLE, DRAGGING_DOWN, DRAGGING_DOWN_DONE, DRAGGING_UP, DRAGGING_UP_DONE
 }
 
+
 private const val SNOOZE_THRESHOLD_DP = 140
 private const val MAX_SHEET_FRACTION = 0.6f
 private const val SHEET_STAY_OPEN_THRESHOLD = 0.8f
@@ -196,8 +197,8 @@ fun RingScreen(
     modifier: Modifier = Modifier,
     alarm: Alarm?,
     isSnoozed: Boolean,
-    snoozeRemaining: Long? = null,
-    snoozeUntil: Long? = null,
+    snoozeRemaining: Long = -1L,
+    snoozeUntil: Long = -1L,
     onDismiss: () -> Unit,
     onSkipSnooze: () -> Unit,
     onSnooze: () -> Unit,

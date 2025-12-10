@@ -27,8 +27,67 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
+enum class AlarmStateMode {
+    UNKNOWN, RINGING , SNOOZED , DOING_CHALLENGE , IGNORED;
+}
+
+class AlarmState(
+    val alarm: Alarm,
+    val scope: CoroutineScope,
+    val useCases: AlarmUseCases,
+    val systemVolumeManager : SystemVolumeManager,
+    val ringtonePlayer : RingtonePlayer,
+    val onFatalError : (e: Exception)->Unit,
+    val updateNotification: ()->Unit,
+    val log: ((String)->Unit)? = null
+){
+    private val _isSnoozed = MutableStateFlow(false)
+    var isSnoozed: StateFlow<Boolean> = _isSnoozed.asStateFlow()
+
+    private val _snoozedUntil = MutableStateFlow(-1L)
+    var snoozedUntil: StateFlow<Long> = _snoozedUntil.asStateFlow()
+
+    
+    @SuppressLint("ScheduleExactAlarm")
+    fun snooze(){
+        _isSnoozed.value = true
+
+        val next = useCases.snooze(alarm)
+        _snoozedUntil.value = next
+
+        updateNotification()
+        _isSnoozed.value = true
+        log?.invoke("Snooze pressed for id ${alarm.id}")
+
+        ringtonePlayer.stop()
+        useCases.snooze(alarm)
+    }
+    fun ring(){
+        _isSnoozed.value = false
+
+        log?.invoke("Ring started for id ${alarm.id}")
+        scope.launch {
+            try {
+                updateNotification()
+                playRingtone()
+            } catch (e: Exception) {
+                onFatalError(e)
+            }
+        }
+    }
+
+    fun playRingtone(){
+        if (alarm.ringtoneData == null) return
+        systemVolumeManager.setMaxVolumeForType()
+        log?.invoke("ring alarm")
+        ringtonePlayer.play(alarm.ringtoneData!!, alarm.ringtoneVolume, 30000 , alarm.vibrate)
+    }
+    
+}
 @AndroidEntryPoint
 class AlarmService : Service() {
+
+    var isPreview: Boolean = false
 
     @Inject
     lateinit var useCases: AlarmUseCases
@@ -41,20 +100,18 @@ class AlarmService : Service() {
 
     lateinit var alarm: Alarm
 
+    lateinit var state: AlarmState
+
     var alarmId: Int = -1
 
     var actualTriggerMillis : Long = 0 // is used for in calculation of next trigger time correctly when smart offset has been used
 
-    var isPreview: Boolean = false
+    private val scope = CoroutineScope(Dispatchers.IO)
 
-    var snoozeUntil: Long = -1
-    private val _isSnoozed = MutableStateFlow(false)
-    val isSnoozed: StateFlow<Boolean> = _isSnoozed.asStateFlow()
 
     @Inject
     lateinit var logRepository: LogRepository
 
-    private val scope = CoroutineScope(Dispatchers.IO)
 
     inner class AlarmBinder : Binder() {
         fun getService(): AlarmService = this@AlarmService
@@ -78,7 +135,6 @@ class AlarmService : Service() {
             )
             return START_NOT_STICKY
         }
-
         startForeground(alarmId, getBaseNotification(applicationContext).also {
             logStep("Base Notification Sent")
         })
@@ -103,24 +159,17 @@ class AlarmService : Service() {
     }
 
     private fun handleRing() {
-        logStep("Ring started for id $alarmId")
         scope.launch {
-            try {
-                initializeAlarm()
-                updateNotification()
-                ringAlarm()
-                startActivity(
-                    Intent(
-                        applicationContext, RingActivity::class.java
-                    ).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                )
-            } catch (e: Exception) {
-                abort(e.message ?: "Error initializing alarm")
-            }
+            initializeAlarm()
+            state.ring()
+            startActivity(
+                Intent(
+                    applicationContext, RingActivity::class.java
+                ).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+            )
         }
-        _isSnoozed.value = false
     }
 
     private suspend fun initializeAlarm() {
@@ -129,6 +178,16 @@ class AlarmService : Service() {
         } catch (_: UninitializedPropertyAccessException) {
             alarm = useCases.getById(alarmId)
         }
+        state = AlarmState(
+            alarm = alarm,
+            scope = scope,
+            useCases = useCases,
+            systemVolumeManager = systemVolumeManager,
+            ringtonePlayer = ringtonePlayer,
+            updateNotification = {updateNotification()},
+            log = { logStep(it) },
+            onFatalError = {abort(it.message?: "Error initializing alarm")}
+        )
         logStep("Alarm Initialized $alarm")
         if (!isPreview) rescheduleAlarmRepeats()
     }
@@ -152,16 +211,7 @@ class AlarmService : Service() {
 
     @SuppressLint("ScheduleExactAlarm")
     fun handleSnooze() {
-        val next = useCases.snooze(alarm)
-        snoozeUntil = next
-
-        updateNotification()
-        _isSnoozed.value = true
-        logStep("Snooze pressed for id ${alarm.id}")
-
-        ringtonePlayer.stop()
-        useCases.snooze(alarm)
-
+        state.snooze()
         updateNotification()
     }
 
@@ -177,20 +227,10 @@ class AlarmService : Service() {
         handleDismiss()
     }
 
-    private fun ringAlarm() {
-        if (alarm.ringtoneData == null) return
-        systemVolumeManager.setMaxVolumeForType()
-
-        logStep("ring alarm")
-        ringtonePlayer.play(
-            alarm.ringtoneData!!, alarm.ringtoneVolume, 30000 , alarm.vibrate
-        )
-    }
-
     private fun updateNotification(hideHeadsUp: Boolean = false) {
         startForeground(
             1,
-            getAlarmNotification(applicationContext, alarm, isSnoozed.value, hideHeadsUp)
+            getAlarmNotification(applicationContext, alarm, state.isSnoozed.value, hideHeadsUp)
         )
     }
 
