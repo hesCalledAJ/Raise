@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.alijafari.raise.core.ui.theme.Wakee2Theme
 import com.alijafari.raise.feature_alarm.data.service.AlarmService
+import com.alijafari.raise.feature_alarm.data.service.AlarmStatus
 import com.alijafari.raise.feature_logs.domain.model.EventLog
 import com.alijafari.raise.feature_logs.domain.repository.LogRepository
 import dagger.hilt.android.AndroidEntryPoint
@@ -78,10 +79,8 @@ class RingActivity : ComponentActivity() {
 
         setContent {
             val alarm by viewModel.alarm.collectAsState()
-            val snoozeRemaining by viewModel.snoozeRemaining.collectAsState(initial = 0L)
-            val snoozeUntil by viewModel.snoozedUntil.collectAsState()
+            val alarmStatus by viewModel.status.collectAsState()
             Wakee2Theme {
-                val isSnoozed by viewModel.isSnoozed.collectAsState(initial = false)
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
                     RingScreen(
@@ -89,11 +88,10 @@ class RingActivity : ComponentActivity() {
                             .fillMaxSize()
                             .padding(padding),
                         alarm = alarm,
-                        isSnoozed = isSnoozed,
-                        snoozeRemaining = snoozeRemaining,
-                        snoozeUntil = snoozeUntil,
+                        alarmStatus = alarmStatus,
                         onDismiss = { viewModel.onDismiss() },
                         onSnooze = { viewModel.onSnooze() },
+                        onInteractionStarted = {viewModel.onUserInteraction()},
                         onSkipSnooze = { viewModel.onSkipSnooze() }
                     )
                 }

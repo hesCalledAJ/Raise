@@ -1,13 +1,11 @@
 package com.alijafari.raise.feature_alarm.presentation.ring.components
 
-import android.util.Log
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -37,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -71,8 +68,8 @@ fun DraggableAlarmDataContainer(
     maxDismissSheetFraction: Float,
     effectiveDismissSheetFraction: Float,
     screenHeightPx: Float,
-    snoozedUntil : Long,
-    snoozeRemaining : Long
+    snoozedUntil: Long,
+    snoozeRemaining: Long,
 ) {
     val dragOffset by remember { state.dragOffsetState }
     val sheetFraction by remember { state.sheetFractionState }
@@ -115,8 +112,7 @@ fun DraggableAlarmDataContainer(
                     if (!isSnoozed) Modifier.ringDrag(state, 1.5f)
                     else Modifier
                 )
-                .padding(vertical = 6.dp)
-            ,
+                .padding(vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {
             AlarmData(
@@ -163,7 +159,7 @@ fun AlarmData(
     dragProgress: Float,
     alarm: Alarm,
     snoozedUntil: Long,
-    snoozeRemaining: Long
+    snoozeRemaining: Long,
 ) {
     val infiniteTransition = rememberInfiniteTransition()
     val rotationSpeed = lerp(1f, 0f, dragProgress)
@@ -174,7 +170,8 @@ fun AlarmData(
         )
     )
 
-    val alarmTime = remember { if (isSnoozed) getTimeString(snoozedUntil) else alarm.getTimeString() }
+    val alarmTime =
+        remember { if (isSnoozed) getTimeString(snoozedUntil) else alarm.getTimeString() }
 
     val animatedContentColor by animateColorAsState(
         targetValue = if (isSnoozed) MaterialTheme.colorScheme.primary else lerp(
@@ -195,7 +192,7 @@ fun AlarmData(
             isSnoozed
         ) {
             val density = LocalDensity.current
-            if (!it){
+            if (!it) {
                 Box(
                     modifier = Modifier
                         .graphicsLayer(rotationZ = rotation)
@@ -209,13 +206,16 @@ fun AlarmData(
             } else {
                 CircularWavyProgressIndicator(
                     progress = {
-                        val progress =1f - snoozeRemaining / (alarm.snoozeMinutes * 60000f)
+                        val progress = 1f - snoozeRemaining / (alarm.snoozeMinutes * 60000f)
                         progress.coerceIn(0f, 1f)
                     },
                     modifier = Modifier.fillMaxSize(),
                     wavelength = 100.dp,
-                    stroke = Stroke(width = with(density){13.dp.toPx()} , cap = StrokeCap.Round),
-                    trackStroke = Stroke(width = with(density){10.dp.toPx()},cap = StrokeCap.Round),
+                    stroke = Stroke(width = with(density) { 13.dp.toPx() }, cap = StrokeCap.Round),
+                    trackStroke = Stroke(
+                        width = with(density) { 10.dp.toPx() },
+                        cap = StrokeCap.Round
+                    ),
                     trackColor = MaterialTheme.colorScheme.primaryContainer,
                     gapSize = 9.dp,
                     waveSpeed = 60.dp,
@@ -255,7 +255,7 @@ fun AlarmData(
 
 private fun Modifier.ringDrag(
     state: RingScreenState,
-    dragMultiplier: Float
+    dragMultiplier: Float,
 ): Modifier = this.pointerInput(Unit) {
     detectVerticalDragGestures(
         onDragStart = {

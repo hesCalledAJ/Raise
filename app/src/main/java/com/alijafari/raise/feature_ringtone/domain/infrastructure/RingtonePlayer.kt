@@ -6,4 +6,6 @@ interface RingtonePlayer {
     fun play(ringtone: RingtoneData, volume: Float , fadeInMs: Long? = null,vibrate:Boolean=false)
     fun stop()
     fun setVolume(volume: Float)
+    fun playTimeBombSound()
+    fun stopTimeBombSound()
 }

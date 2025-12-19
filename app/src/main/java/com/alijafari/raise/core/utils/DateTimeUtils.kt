@@ -26,7 +26,6 @@ fun getTimeString(millis: Long): String {
 fun Alarm.getTimeString() = getTimeString(hour,minute)
 fun Alarm.makeOffsetSubtitle(context: Context): String {
     return if (!smartOffsetData.enabled) {
-        "Shifts the alarm randomly for a gentler wake-up"
         context.getString(R.string.editor_offset_sub)
     } else {
         val start = (minute + smartOffsetData.range.first).let {

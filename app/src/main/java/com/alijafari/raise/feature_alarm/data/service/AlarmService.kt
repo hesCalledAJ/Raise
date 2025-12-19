@@ -5,7 +5,6 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
-import android.util.Log
 import com.alijafari.raise.feature_alarm.data.AlarmBroadcastEvent
 import com.alijafari.raise.feature_alarm.data.AlarmIntentExtra
 import com.alijafari.raise.feature_alarm.data.service.NotificationHelper.getAlarmNotification
@@ -22,48 +21,44 @@ import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-enum class AlarmStateMode {
-    UNKNOWN, RINGING , SNOOZED , DOING_CHALLENGE , IGNORED;
+sealed interface AlarmStatus {
+    object Ringing : AlarmStatus
+    data class Snoozed(val remainingMs: Long, val totalMs: Long,val targetTimeMs: Long) : AlarmStatus
+    data class TimeBombCountDown(val remainingMs: Long, val totalMs: Long) : AlarmStatus
+    object TimeBombRinging : AlarmStatus
 }
 
 class AlarmState(
     val alarm: Alarm,
     val scope: CoroutineScope,
     val useCases: AlarmUseCases,
-    val systemVolumeManager : SystemVolumeManager,
-    val ringtonePlayer : RingtonePlayer,
-    val onFatalError : (e: Exception)->Unit,
-    val updateNotification: ()->Unit,
-    val log: ((String)->Unit)? = null
-){
-    private val _isSnoozed = MutableStateFlow(false)
-    var isSnoozed: StateFlow<Boolean> = _isSnoozed.asStateFlow()
+    val systemVolumeManager: SystemVolumeManager,
+    val ringtonePlayer: RingtonePlayer,
+    val onFatalError: (e: Exception) -> Unit,
+    val updateNotification: () -> Unit,
+    val log: ((String) -> Unit)? = null
+) {
+    private val _status = MutableStateFlow<AlarmStatus>(AlarmStatus.Ringing)
+    val status: StateFlow<AlarmStatus> = _status.asStateFlow()
 
-    private val _snoozedUntil = MutableStateFlow(-1L)
-    var snoozedUntil: StateFlow<Long> = _snoozedUntil.asStateFlow()
+    private var countdownJob: Job? = null
 
-    
-    @SuppressLint("ScheduleExactAlarm")
-    fun snooze(){
+    fun ring() {
+        countdownJob?.cancel()
+        _status.value = AlarmStatus.Ringing
 
-        _isSnoozed.value = true
-        _snoozedUntil.value = useCases.snooze(alarm)
-        ringtonePlayer.stop()
+        if (alarm.timeBombData.enabled) {
+            startTimeBomb(alarm.timeBombData.delaySeconds * 1000L)
+        }
 
-        updateNotification()
-        log?.invoke("Snooze pressed for id ${alarm.id}")
-
-    }
-    fun ring(){
-        _isSnoozed.value = false
-
-        log?.invoke("Ring started for id ${alarm.id}")
         scope.launch {
             try {
                 updateNotification()
@@ -74,13 +69,74 @@ class AlarmState(
         }
     }
 
-    fun playRingtone(){
+    @SuppressLint("ScheduleExactAlarm")
+    fun snooze() {
+        countdownJob?.cancel()
+        ringtonePlayer.stop()
+
+        val snoozedUntil = useCases.snooze(alarm)
+        val totalSnoozeTime = snoozedUntil - System.currentTimeMillis()
+
+        startCountdown(
+            totalMs = totalSnoozeTime,
+            onTick = { remaining -> _status.value = AlarmStatus.Snoozed(remaining, totalSnoozeTime,snoozedUntil) },
+            onFinished = {
+//                ring()
+            }
+        )
+
+        updateNotification()
+        log?.invoke("Snooze pressed for id ${alarm.id}")
+    }
+
+    fun startTimeBomb(timeoutMs: Long) {
+        countdownJob?.cancel()
+        startCountdown(
+            totalMs = timeoutMs,
+            onTick = { remaining -> _status.value = AlarmStatus.TimeBombCountDown(remaining, timeoutMs) },
+            onFinished = {
+                log?.invoke("TimeBomb finished")
+                _status.value = AlarmStatus.TimeBombRinging
+                ringtonePlayer.playTimeBombSound()
+            }
+        )
+    }
+
+    private fun startCountdown(
+        totalMs: Long,
+        onTick: (Long) -> Unit,
+        onFinished: () -> Unit
+    ) {
+        countdownJob = scope.launch {
+            val startTime = System.currentTimeMillis()
+            val endTime = startTime + totalMs
+
+            while (System.currentTimeMillis() < endTime) {
+                val currentRemaining = (endTime - System.currentTimeMillis()).coerceAtLeast(0)
+                onTick(currentRemaining)
+                delay(1000)
+            }
+            onFinished()
+        }
+    }
+
+    fun cancelTimeBomb() {
+        if (_status.value is AlarmStatus.TimeBombRinging) {
+            _status.value = AlarmStatus.Ringing
+            ringtonePlayer.stopTimeBombSound()
+        }
+        else if (_status.value is AlarmStatus.TimeBombCountDown) {
+            countdownJob?.cancel()
+            _status.value = AlarmStatus.Ringing
+        }
+    }
+
+    fun playRingtone() {
         if (alarm.ringtoneData == null) return
         systemVolumeManager.setMaxVolumeForType()
         log?.invoke("ring alarm")
-        ringtonePlayer.play(alarm.ringtoneData!!, alarm.ringtoneVolume, 30000 , alarm.vibrate)
+        ringtonePlayer.play(alarm.ringtoneData!!, alarm.ringtoneVolume, 30000, alarm.vibrate)
     }
-    
 }
 @AndroidEntryPoint
 class AlarmService : Service() {
@@ -228,7 +284,7 @@ class AlarmService : Service() {
     private fun updateNotification(hideHeadsUp: Boolean = false) {
         startForeground(
             alarmId,
-            getAlarmNotification(applicationContext, alarm, state.isSnoozed.value, hideHeadsUp)
+            getAlarmNotification(applicationContext, alarm, state.status.value is AlarmStatus.Snoozed, hideHeadsUp)
         )
     }
 

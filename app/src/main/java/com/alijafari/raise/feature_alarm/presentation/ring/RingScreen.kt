@@ -1,39 +1,38 @@
 package com.alijafari.raise.feature_alarm.presentation.ring
 
-import android.util.Log
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.alijafari.raise.core.ui.theme.Wakee2Theme
+import com.alijafari.raise.feature_alarm.data.service.AlarmStatus
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.presentation.ring.components.DismissBottomSheet
 import com.alijafari.raise.feature_alarm.presentation.ring.components.DraggableAlarmDataContainer
 import com.alijafari.raise.feature_alarm.presentation.ring.components.SnoozeTopShape
+import com.alijafari.raise.feature_alarm.presentation.ring.components.TimeBombPill
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlin.math.max
 
@@ -55,6 +54,7 @@ class RingScreenState(
     private val dragThresholdPx: Float,
     private val maxSheetFraction: Float,
     private val onSnooze: () -> Unit,
+    private val onInteractionStarted: () -> Unit,
     val onDismissOrSkip: () -> Unit
 ) {
     private val _dragOffset = Animatable(0f)
@@ -81,6 +81,7 @@ class RingScreenState(
     }
 
     fun onDrag(dragAmount: Float) {
+        onInteractionStarted()
         scope.launch {
             val newOffset = (_dragOffset.value + dragAmount).coerceIn(
                 -screenHeightPx,
@@ -171,6 +172,7 @@ fun rememberRingScreenState(
     onSnooze: () -> Unit,
     screenHeightPx: Float,
     dragThresholdPx: Float,
+    onInteractionStarted: () -> Unit,
     onDismissOrSkip: () -> Unit,
     scope: CoroutineScope = rememberCoroutineScope(),
     maxSheetFraction: Float = MAX_SHEET_FRACTION
@@ -182,6 +184,7 @@ fun rememberRingScreenState(
             dragThresholdPx,
             maxSheetFraction,
             onSnooze,
+            onInteractionStarted,
             onDismissOrSkip
         )
     }
@@ -195,11 +198,10 @@ fun rememberRingScreenState(
 fun RingScreen(
     modifier: Modifier = Modifier,
     alarm: Alarm?,
-    isSnoozed: Boolean,
-    snoozeRemaining: Long = -1L,
-    snoozeUntil: Long = -1L,
+    alarmStatus: AlarmStatus,
     onDismiss: () -> Unit,
     onSkipSnooze: () -> Unit,
+    onInteractionStarted: () -> Unit,
     onSnooze: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -207,11 +209,13 @@ fun RingScreen(
     val screenHeightPx = remember { with(density) { screenHeight.dp.toPx() } }
     val dragThresholdPx = remember { with(density) { SNOOZE_THRESHOLD_DP.dp.toPx() } }
 
+    val isSnoozed = alarmStatus is AlarmStatus.Snoozed
     val state = rememberRingScreenState(
         isSnoozed = isSnoozed,
         screenHeightPx = screenHeightPx,
         dragThresholdPx = dragThresholdPx,
         onSnooze = onSnooze,
+        onInteractionStarted = onInteractionStarted,
         onDismissOrSkip = { if (isSnoozed) onSkipSnooze() else onDismiss() }
     )
 
@@ -240,10 +244,19 @@ fun RingScreen(
                 maxDismissSheetFraction = MAX_SHEET_FRACTION,
                 screenHeightPx = screenHeightPx,
                 effectiveDismissSheetFraction = effectiveSheetFraction,
-                snoozedUntil = snoozeUntil,
-                snoozeRemaining = snoozeRemaining,
+                snoozedUntil = if (isSnoozed) alarmStatus.targetTimeMs else -1L,
+                snoozeRemaining = if (isSnoozed) alarmStatus.remainingMs else -1L,
             )
+            if (alarmStatus is AlarmStatus.TimeBombCountDown || alarmStatus is AlarmStatus.TimeBombRinging) {
 
+                val progress =if (alarmStatus is AlarmStatus.TimeBombCountDown) 1f - alarmStatus.remainingMs.toFloat() / alarmStatus.totalMs.toFloat() else 1f
+                progress.coerceIn(0f, 1f)
+                TimeBombPill(
+                    progress = progress,
+                    remainingSeconds = if (alarmStatus is AlarmStatus.TimeBombCountDown) alarmStatus.remainingMs / 1000 else 0,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
+                )
+            }
             DismissBottomSheet(
                 effectiveSheetFraction = effectiveSheetFraction,
                 state = state,
@@ -253,7 +266,7 @@ fun RingScreen(
         }
     }
 }
-
+//
 @Preview(showBackground = true)
 @Composable
 fun RingScreenPreview() {
@@ -261,8 +274,9 @@ fun RingScreenPreview() {
         RingScreen(
             modifier = Modifier,
             alarm = Alarm(),
-            isSnoozed = false,
+            alarmStatus = AlarmStatus.TimeBombCountDown(20000L,20000L),
             onDismiss = {},
+            onInteractionStarted = {},
             onSkipSnooze = {},
         ) { }
     }

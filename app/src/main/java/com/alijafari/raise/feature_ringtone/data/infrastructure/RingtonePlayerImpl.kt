@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Log
+import com.alijafari.raise.R
 import com.alijafari.raise.core.utils.VolumeUtils
 import com.alijafari.raise.feature_ringtone.domain.infrastructure.RingtonePlayer
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
@@ -125,5 +126,29 @@ class RingtonePlayerImpl @Inject constructor(
     private fun stopVibration() {
         vibrator?.cancel()
         vibrator = null
+    }
+
+    override fun stopTimeBombSound() {
+        stop()
+    }
+
+    override fun playTimeBombSound() {
+        stop()
+        val mp = MediaPlayer.create(context, R.raw.loud).apply {
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+            )
+            isLooping = true
+        }
+
+        mediaPlayer = mp
+
+        mp.setVolume(1.0f, 1.0f)
+
+        mp.start()
+        startVibration()
     }
 }
