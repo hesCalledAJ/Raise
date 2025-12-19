@@ -5,6 +5,7 @@ import android.app.Service
 import android.content.Intent
 import android.os.Binder
 import android.os.IBinder
+import android.util.Log
 import com.alijafari.raise.feature_alarm.data.AlarmBroadcastEvent
 import com.alijafari.raise.feature_alarm.data.AlarmIntentExtra
 import com.alijafari.raise.feature_alarm.data.service.NotificationHelper.getAlarmNotification
@@ -50,17 +51,14 @@ class AlarmState(
     
     @SuppressLint("ScheduleExactAlarm")
     fun snooze(){
-        _isSnoozed.value = true
 
-        val next = useCases.snooze(alarm)
-        _snoozedUntil.value = next
+        _isSnoozed.value = true
+        _snoozedUntil.value = useCases.snooze(alarm)
+        ringtonePlayer.stop()
 
         updateNotification()
-        _isSnoozed.value = true
         log?.invoke("Snooze pressed for id ${alarm.id}")
 
-        ringtonePlayer.stop()
-        useCases.snooze(alarm)
     }
     fun ring(){
         _isSnoozed.value = false
@@ -229,7 +227,7 @@ class AlarmService : Service() {
 
     private fun updateNotification(hideHeadsUp: Boolean = false) {
         startForeground(
-            1,
+            alarmId,
             getAlarmNotification(applicationContext, alarm, state.isSnoozed.value, hideHeadsUp)
         )
     }

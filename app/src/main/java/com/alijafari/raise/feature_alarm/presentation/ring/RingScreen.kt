@@ -59,7 +59,6 @@ class RingScreenState(
 ) {
     private val _dragOffset = Animatable(0f)
     private val _sheetFraction = Animatable(0f)
-    // add these
     val dragOffsetState: State<Float> = derivedStateOf { _dragOffset.value }
     val sheetFractionState: State<Float> = derivedStateOf { _sheetFraction.value }
 
@@ -245,10 +244,6 @@ fun RingScreen(
                 snoozeRemaining = snoozeRemaining,
             )
 
-            LaunchedEffect(effectiveSheetFraction,state) {
-                Log.e("DEBUG", "RS: ${state.screenState.value.name}", )
-                Log.e("DEBUG", "RS: $effectiveSheetFraction", )
-            }
             DismissBottomSheet(
                 effectiveSheetFraction = effectiveSheetFraction,
                 state = state,

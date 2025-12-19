@@ -58,11 +58,6 @@ fun DismissBottomSheet(
                 onDragDown = onDragDown,
                 onRelease = onRelease
             ) {
-
-                LaunchedEffect(effectiveSheetFraction,state) {
-                    Log.e("DEBUG", "DMBS: ${state.screenState.value.name}", )
-                    Log.e("DEBUG", "DMBS: $effectiveSheetFraction", )
-                }
                 Column(
                     modifier = Modifier
                         .padding(14.dp)
@@ -105,9 +100,7 @@ private fun BottomSheetOverlay(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(with(LocalDensity.current) { sheetHeightPx.toDp() }.also {
-                Log.e("DEBUG", "BottomSheetOverlay: $it", )
-            })
+            .height(with(LocalDensity.current) { sheetHeightPx.toDp() })
             .background(
                 color = MaterialTheme.colorScheme.surface,
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)

@@ -6,6 +6,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.annotation.RequiresPermission
 import com.alijafari.raise.MainActivity
 import com.alijafari.raise.feature_alarm.domain.AlarmScheduler
@@ -67,8 +68,7 @@ class AndroidScheduler @Inject constructor(
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun snooze(alarm: Alarm) : Long{
-        if (!alarm.isEnabled) return -1
-        val triggerTime = System.currentTimeMillis() + 60_000 * alarm.snoozeMinutes
+        val triggerTime = System.currentTimeMillis() + alarm.snoozeMinutes * 60_000
         alarmManager.setExactAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerTime,

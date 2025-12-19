@@ -69,9 +69,7 @@ class AlarmsViewModel @Inject constructor(
     }
 
     fun setEditingAlarmEdit(newInstance : Alarm){
-        _editingAlarm.value = newInstance.also {
-            Log.e("TAG", "saveEditingAlarm: ${editingAlarm.value}", )
-        }
+        _editingAlarm.value = newInstance
     }
 
     fun toggleAlarm(alarm: Alarm) {

@@ -78,7 +78,7 @@ class RingActivity : ComponentActivity() {
 
         setContent {
             val alarm by viewModel.alarm.collectAsState()
-            val snoozeRemaining by viewModel.snoozeRemaining.collectAsState()
+            val snoozeRemaining by viewModel.snoozeRemaining.collectAsState(initial = 0L)
             val snoozeUntil by viewModel.snoozedUntil.collectAsState()
             Wakee2Theme {
                 val isSnoozed by viewModel.isSnoozed.collectAsState(initial = false)

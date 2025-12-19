@@ -79,9 +79,6 @@ fun DraggableAlarmDataContainer(
 
     val isDragging by remember { derivedStateOf { state.isDragging } }
 
-    LaunchedEffect(dragOffset) {
-        Log.e("DBG","state.dragOffset.collect -> $dragOffset")
-    }
     val scale = animateFloatAsState(
         targetValue = if (!isDragging) .95f else 1.05f,
         animationSpec = spring(
@@ -112,8 +109,6 @@ fun DraggableAlarmDataContainer(
                     val maxUpOffset = -sheetHeightPx / 2f
                     val interpolated = dragBased * (1f - normalized) + maxUpOffset * normalized
                     val finalOffset = if (interpolated < maxUpOffset) maxUpOffset else interpolated
-                    Log.e("DEBUG", "finalOffset : $finalOffset",)
-                    Log.e("DEBUG", "dragOffset : $dragOffset",)
                     IntOffset(0, finalOffset.roundToInt())
                 }
                 .then(
@@ -214,10 +209,11 @@ fun AlarmData(
             } else {
                 CircularWavyProgressIndicator(
                     progress = {
-                        1f - (((snoozeRemaining / 1000f) / (alarm.snoozeMinutes * 60f)).coerceAtLeast(.05f))
+                        val progress =1f - snoozeRemaining / (alarm.snoozeMinutes * 60000f)
+                        progress.coerceIn(0f, 1f)
                     },
                     modifier = Modifier.fillMaxSize(),
-                    wavelength = 80.dp,
+                    wavelength = 100.dp,
                     stroke = Stroke(width = with(density){13.dp.toPx()} , cap = StrokeCap.Round),
                     trackStroke = Stroke(width = with(density){10.dp.toPx()},cap = StrokeCap.Round),
                     trackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -264,7 +260,6 @@ private fun Modifier.ringDrag(
     detectVerticalDragGestures(
         onDragStart = {
             state.isDragging = true
-            Log.e("DEBUG", "ringDrag: drag started", )
         },
         onVerticalDrag = { change, dragAmount ->
 
@@ -274,12 +269,9 @@ private fun Modifier.ringDrag(
             } else {
                 dragAmount
             }
-
-            Log.e("DEBUG", "ringDrag: adjustedDragAmount $adjustedDragAmount", )
             state.onDrag(adjustedDragAmount)
         },
         onDragEnd = {
-            Log.e("DEBUG", "ringDrag: drag ended", )
             state.onDragEnd()
         }
     )

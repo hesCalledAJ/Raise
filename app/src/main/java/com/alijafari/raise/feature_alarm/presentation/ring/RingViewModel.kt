@@ -1,5 +1,6 @@
 package com.alijafari.raise.feature_alarm.presentation.ring
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.alijafari.raise.core.utils.tickerFlow
@@ -26,9 +27,8 @@ class RingViewModel @Inject constructor() : ViewModel() {
 
     private val _isSnoozed = MutableStateFlow(false)
     val isSnoozed: StateFlow<Boolean> = _isSnoozed.asStateFlow()
-
-
-
+    private var _snoozedUntil = MutableStateFlow(-1L)
+    val snoozedUntil = _snoozedUntil.asStateFlow()
 
     private val _alarm : MutableStateFlow<Alarm?> = MutableStateFlow(null)
     val alarm : StateFlow<Alarm?> = _alarm.asStateFlow()
@@ -36,8 +36,6 @@ class RingViewModel @Inject constructor() : ViewModel() {
     private var serviceRef: AlarmService? = null
     private var serviceJob: Job? = null
 
-    private var _snoozedUntil = MutableStateFlow<Long>(-1L)
-    val snoozedUntil = _snoozedUntil.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
 
@@ -61,10 +59,14 @@ class RingViewModel @Inject constructor() : ViewModel() {
         serviceJob?.cancel()
         serviceJob = viewModelScope.launch {
             launch {
-                service.state.snoozedUntil.collect { _snoozedUntil.value = it }
+                service.state.snoozedUntil.collect {
+                    _snoozedUntil.value = it
+                }
             }
             launch {
-                service.state.isSnoozed.collect { _isSnoozed.value = it }
+                service.state.isSnoozed.collect {
+                    _isSnoozed.value = it
+                }
             }
         }
     }

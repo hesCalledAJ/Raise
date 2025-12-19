@@ -1,5 +1,6 @@
 package com.alijafari.raise.feature_alarm.presentation.editor.components
 
+import android.net.Uri
 import android.util.Log
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -55,30 +56,29 @@ fun RingtoneSelectorDialog(
     var selectedRingtone by remember { mutableStateOf(selectedRingtone) }
     var selectedVolume by remember { mutableStateOf(selectedVolume) }
 
-    var isPlaying by remember { mutableStateOf(false) }
+    var playingUri by remember { mutableStateOf<Uri?>(null) }
 
-    fun stopPlayer() {
+    fun play(ringtone: RingtoneData) {
         ringtonePreviewPlayer.stop()
-        isPlaying = false
+        ringtonePreviewPlayer.play(ringtone, selectedVolume)
+        playingUri = ringtone.uri
     }
 
-    fun playSelected() {
-        selectedRingtone?.let { ringtonePreviewPlayer.play(it,selectedVolume) }
-        isPlaying = true
+    fun stop() {
+        ringtonePreviewPlayer.stop()
+        playingUri = null
     }
 
-    LaunchedEffect(selectedRingtone) {
-        stopPlayer()
-    }
     LaunchedEffect(isVisible) {
         if (!isVisible){
+            playingUri = null
             ringtonePreviewPlayer.stop()
         }
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            stopPlayer()
+            stop()
         }
     }
 
@@ -100,6 +100,8 @@ fun RingtoneSelectorDialog(
         ) {
             items(ringtonesList) { ringtone ->
                 val isSelected = selectedRingtone?.uri == ringtone.uri
+                val isPlaying = playingUri == ringtone.uri
+
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -115,65 +117,35 @@ fun RingtoneSelectorDialog(
                         selected = isSelected,
                         onClick = { selectedRingtone = ringtone }
                     )
-                    Text(ringtone.name ?: "Unknown")
+                    Text(
+                        modifier = Modifier
+                            .weight(1f),
+                        text = ringtone.name ?: "Unknown")
+                    IconButton(
+                        onClick = {
+                            if (isPlaying) stop() else play(ringtone)
+                        }
+                    ) {
+                        Image(
+                            painter = rememberAnimatedVectorPainter(
+                                AnimatedImageVector.animatedVectorResource(
+                                    if (isPlaying)
+                                        R.drawable.ic_pause_animated
+                                    else
+                                        R.drawable.ic_play_animated
+                                ),
+                                isPlaying
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier.size(25.dp),
+                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
+                        )
+                    }
                 }
             }
         }
         LaunchedEffect(Unit) {
             listState.animateScrollToItem(ringtonesList.indexOf(selectedRingtone).takeIf { it >=0 } ?: 0, 0)
-        }
-        Spacer(modifier = Modifier.height(7.dp))
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(
-                    if (selectedVolume == 0f) R.drawable.ic_speaker_disabled
-                    else if (selectedVolume <= 0.4f) R.drawable.ic_speaker_low
-                    else R.drawable.ic_speaker_loud
-                ),
-                contentDescription = null,
-                modifier = Modifier.size(25.dp)
-            )
-
-            Spacer(Modifier.width(5.dp))
-
-            Slider(
-                modifier = Modifier.weight(1f),
-                value = selectedVolume,
-                onValueChange = {
-                    selectedVolume = it
-                    ringtonePreviewPlayer.setVolume(it)
-                }
-            )
-
-            Spacer(Modifier.width(6.dp))
-
-
-            AnimatedImageVector.animatedVectorResource(if (isPlaying) R.drawable.ic_pause_animated else R.drawable.ic_play_animated)
-            IconButton(onClick = {
-                val ringtone = selectedRingtone ?: return@IconButton
-
-                if (isPlaying) {
-                    stopPlayer()
-                } else {
-                    playSelected()
-                }
-            }) {
-                Image(
-                    painter = rememberAnimatedVectorPainter(
-                        AnimatedImageVector.animatedVectorResource(
-                            if (isPlaying) R.drawable.ic_pause_animated
-                            else R.drawable.ic_play_animated
-                        ),
-                        isPlaying
-                    ),
-                    contentDescription = null,
-                    modifier = Modifier.size(25.dp),
-                    colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary)
-                )
-            }
         }
     }
 }

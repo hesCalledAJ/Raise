@@ -17,7 +17,6 @@ fun getTimeString(hour : Int , minute : Int) = String.format("%02d:%02d", hour, 
 fun getTimeString(millis: Long): String {
     val c = Calendar.getInstance()
     c.timeInMillis = millis
-    Log.e("TAG", "getTimeString: $millis", )
     return "%02d:%02d".format(
         c.get(Calendar.HOUR_OF_DAY),
         c.get(Calendar.MINUTE)
