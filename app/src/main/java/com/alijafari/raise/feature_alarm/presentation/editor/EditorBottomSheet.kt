@@ -1,18 +1,12 @@
 package com.alijafari.raise.feature_alarm.presentation.editor
 
-import android.util.Log
-import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -35,7 +29,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberSliderState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,12 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -206,7 +195,6 @@ fun EditorBottomSheet(
         }
     )
 
-
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -266,7 +254,7 @@ fun EditorBottomSheet(
                     },
                     icon = painterResource(R.drawable.ic_label),
                     title = "Title",
-                    position = CardPosition.FIRST
+                    position = if (isTitleDialogVisible) CardPosition.ONLY else CardPosition.FIRST
                 ) {
                     Text(text = editingAlarm.label)
                 }
@@ -277,7 +265,7 @@ fun EditorBottomSheet(
                     },
                     icon = painterResource(R.drawable.ic_repeat),
                     title = "Repeat Days",
-                    position = CardPosition.MIDDLE
+                    position = if (isRepeatDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE
                 ) {
                     Text(text = formatSelectedDays(editingAlarm.repeatDays))
                 }
@@ -288,10 +276,16 @@ fun EditorBottomSheet(
                     },
                     icon = painterResource(R.drawable.ic_snooze),
                     title = "Snooze",
-                    position = CardPosition.LAST
+                    position = if (isSnoozePickerVisible) CardPosition.ONLY else CardPosition.LAST
                 ) {
-                    Text(text = stringResource(R.string.n_minutes, editingAlarm.snoozeMinutes))
+                    Text(
+                        text = if (editingAlarm.snoozeMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
+                            R.string.n_minutes,
+                            editingAlarm.snoozeMinutes
+                        )
+                    )
                 }
+                Spacer(Modifier.height(4.dp))
                 EditorCard(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
@@ -314,7 +308,7 @@ fun EditorBottomSheet(
                             editingAlarm.copy(ringtoneVolume = it)
                         )
                     },
-                    position = CardPosition.FIRST
+                    position = if (isRingtoneDialogVisible) CardPosition.ONLY else CardPosition.FIRST
                 ) {
                     if (editingAlarm.ringtoneData != null && editingAlarm.ringtoneVolume != 0f) {
                         Text(text = editingAlarm.ringtoneData.name ?: "Unknown")
@@ -343,8 +337,7 @@ fun EditorBottomSheet(
                         })
                 }
 
-
-                    Box() {
+                Box {
                         this@Column.AnimatedVisibility(isExpanded.not()) {
                             Box(Modifier.fillMaxWidth()) {
                                 EditorCard(
@@ -402,9 +395,8 @@ fun EditorBottomSheet(
                             )
                         }
                     }
-
                 AnimatedVisibility(isExpanded) {
-                    Column() {
+                    Column {
 //                        EditorCard(
 //                            modifier = Modifier
 //                                .fillMaxWidth()
@@ -494,7 +486,7 @@ fun EditorBottomSheet(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(9.dp))
+            Spacer(modifier = Modifier.height(7.dp))
             Row {
                 Button(
                     onClick = {
@@ -529,6 +521,7 @@ fun EditorBottomSheet(
                 ) { Text("Save") }
                 Spacer(Modifier.width(5.dp))
             }
+            Spacer(modifier = Modifier.height(6.dp))
         }
     }
 }

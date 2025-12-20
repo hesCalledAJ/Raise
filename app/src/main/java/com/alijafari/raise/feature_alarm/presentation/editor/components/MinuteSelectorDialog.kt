@@ -54,7 +54,10 @@ fun MinuteSelectorDialog(
         positiveButton = stringResource(R.string.save) to { onSave(selectedMinutes) }
     ) {
         Text(
-            stringResource(R.string.n_minutes, selectedMinutes)
+            if (selectedMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
+                R.string.n_minutes,
+                selectedMinutes
+            )
         )
         Icon(painterResource(R.drawable.ic_triangle), null)
         MinuteRulerPicker(

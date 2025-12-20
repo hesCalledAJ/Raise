@@ -1,12 +1,16 @@
 package com.alijafari.raise.feature_alarm.presentation.editor.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alijafari.raise.R
-import com.alijafari.raise.core.ui.components.PopupDialog
 import kotlin.math.roundToInt
 
 @Composable
@@ -29,19 +32,31 @@ fun OffsetSelectorDialog(
 ) {
     var selectedRange by remember { mutableStateOf(initialRange) }
 
-    PopupDialog(
-        isVisible = isVisible,
-        title = stringResource(R.string.editor_offset_title),
-        onDismiss = onDismiss,
-        positiveButton = stringResource(R.string.save) to { onSave(selectedRange) },
-        negativeButton = stringResource(R.string.cancel) to onDismiss
-    ) {
-        OffsetSlider(
-            range = selectedRange,
-            onRangeChanged = { selectedRange = it },
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
-    }
+    if (isVisible) AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.editor_offset_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.editor_offset_sub))
+                Spacer(Modifier.height(12.dp))
+                OffsetSlider(
+                    range = selectedRange,
+                    onRangeChanged = { selectedRange = it },
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(selectedRange) }) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

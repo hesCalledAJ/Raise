@@ -42,6 +42,8 @@
     <string name="editor_loud_bomb_delay_title">Time Bomb</string>
     <string name="editor_loud_bomb_delay_description">Plays a loud sound after %ds if alarm is being ignored</string>
     <string name="seconds">%d Seconds</string>
+    <string name="disabled">Disabled</string>
+    <string name="snooze_disabled">Disabled 🗿</string>
 
     <plurals name="n_minutes">
         <item quantity="one">%d Minute</item>

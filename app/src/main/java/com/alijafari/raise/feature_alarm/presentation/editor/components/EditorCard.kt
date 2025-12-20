@@ -39,7 +39,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alijafari.raise.core.ui.theme.CardPosition
 
@@ -90,7 +89,7 @@ fun EditorCard(
     Card(
         modifier = modifier
             .padding(
-                bottom = if (position.isLastOrOnly) 8.dp else 4.dp
+                bottom = 4.dp
             )
             .heightIn(min = 51.dp)
             .then(
@@ -114,7 +113,7 @@ fun EditorCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 54.dp)
-                        .padding(horizontal = 16.dp),
+                        .padding(horizontal = 16.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     if (icon != null) {
@@ -131,6 +130,7 @@ fun EditorCard(
                         modifier = Modifier
                             .weight(1f)
                             .align(Alignment.CenterVertically)
+                            .padding(end = 5.dp)
                     ) {
                         if (title != null) {
                             Text(

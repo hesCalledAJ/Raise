@@ -72,6 +72,7 @@ class AlarmState(
 
     @SuppressLint("ScheduleExactAlarm")
     fun snooze() {
+        if (alarm.snoozeMinutes == 0) return
         countdownJob?.cancel()
         ringtonePlayer.stop()
 

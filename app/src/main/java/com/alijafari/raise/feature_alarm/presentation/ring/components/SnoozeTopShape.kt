@@ -117,7 +117,10 @@ fun SnoozeTopShape(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = stringResource(R.string.n_minutes, alarm.snoozeMinutes),
+                            text = if (alarm.snoozeMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
+                                R.string.n_minutes,
+                                alarm.snoozeMinutes
+                            ),
                             style = MaterialTheme.typography.headlineSmallEmphasized,
                             color = MaterialTheme.colorScheme.onError
                         )
