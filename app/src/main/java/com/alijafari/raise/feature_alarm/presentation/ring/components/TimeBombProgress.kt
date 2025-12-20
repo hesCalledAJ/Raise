@@ -1,10 +1,15 @@
 package com.alijafari.raise.feature_alarm.presentation.ring.components
 
-import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -39,20 +44,14 @@ fun TimeBombPill(
 
     Box(
         modifier = modifier
-            .fillMaxWidth(.6f)
             .height(50.dp)
             .clip(CircleShape)
             .background(containerColor)
     ) {
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxHeight()
-                .fillMaxWidth(1f - animatedProgress)
-                .background(barColor, shape = CircleShape)
-                .align(Alignment.CenterStart)
-        )
-        Row(
-            modifier = Modifier.fillMaxHeight().padding(horizontal = 10.dp),
+                .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -63,8 +62,8 @@ fun TimeBombPill(
                     tint = contentColor,
                     modifier = Modifier.size(24.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
                 Text(
+                    modifier = Modifier.padding(horizontal = 6.dp),
                     text = if (progress==1f) "Time Bomb is Active" else "Loud Sound in ${remainingSeconds}s !",
                     color = contentColor,
                     style = MaterialTheme.typography.labelMedium.copy(
@@ -73,6 +72,19 @@ fun TimeBombPill(
                     )
                 )
             }
+        }
+
+        Box( // progress overlay
+            modifier = Modifier
+                .matchParentSize()
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(1f - animatedProgress)
+                    .fillMaxHeight()
+                    .background(barColor, shape = CircleShape)
+                    .align(Alignment.CenterStart)
+            )
         }
     }
 }

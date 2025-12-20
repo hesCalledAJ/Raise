@@ -1,8 +1,11 @@
 package com.alijafari.raise.feature_alarm.presentation.ring
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -247,16 +250,33 @@ fun RingScreen(
                 snoozedUntil = if (isSnoozed) alarmStatus.targetTimeMs else -1L,
                 snoozeRemaining = if (isSnoozed) alarmStatus.remainingMs else -1L,
             )
-            if (alarmStatus is AlarmStatus.TimeBombCountDown || alarmStatus is AlarmStatus.TimeBombRinging) {
+            AnimatedVisibility(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp),
+                visible = alarmStatus is AlarmStatus.TimeBombCountDown || alarmStatus is AlarmStatus.TimeBombRinging,
+                enter = slideInHorizontally(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    )
+                ),
+                exit = slideOutVertically(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                )
+            ) {
 
                 val progress =if (alarmStatus is AlarmStatus.TimeBombCountDown) 1f - alarmStatus.remainingMs.toFloat() / alarmStatus.totalMs.toFloat() else 1f
                 progress.coerceIn(0f, 1f)
                 TimeBombPill(
                     progress = progress,
-                    remainingSeconds = if (alarmStatus is AlarmStatus.TimeBombCountDown) alarmStatus.remainingMs / 1000 else 0,
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(8.dp)
+                    remainingSeconds = if (alarmStatus is AlarmStatus.TimeBombCountDown) alarmStatus.remainingMs / 1000 else 0
                 )
             }
+
             DismissBottomSheet(
                 effectiveSheetFraction = effectiveSheetFraction,
                 state = state,

@@ -181,6 +181,14 @@ fun AlarmData(
         ),
         animationSpec = tween(600)
     )
+    val animatedContainerColor by animateColorAsState(
+        targetValue = if (isSnoozed) MaterialTheme.colorScheme.primary else lerp(
+            MaterialTheme.colorScheme.primary,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0f),
+            dragProgress
+        ),
+        animationSpec = tween(600)
+    )
 
     Box(
         modifier = Modifier
@@ -198,7 +206,7 @@ fun AlarmData(
                         .graphicsLayer(rotationZ = rotation)
                         .background(
                             shape = MaterialShapes.Cookie12Sided.toShape(),
-                            color = MaterialTheme.colorScheme.primary
+                            color = animatedContainerColor
                         )
                         .wrapContentSize(Alignment.Center)
                         .fillMaxSize()
@@ -262,7 +270,6 @@ private fun Modifier.ringDrag(
             state.isDragging = true
         },
         onVerticalDrag = { change, dragAmount ->
-
             change.consume()
             val adjustedDragAmount = if (dragAmount < 0) {
                 dragAmount * dragMultiplier.coerceAtLeast(0f) //only for upward drag , because dismiss gesture can be hard to drag fully up
