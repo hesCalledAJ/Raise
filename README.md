@@ -1,3 +1,5 @@
+<img src="https://github.com/user-attachments/assets/a5fd0ca8-c7dd-436c-be0d-36babed383cd" width="90" />
+
 # Raise ⏰
 a **Material You** alarm app for Android, being built with **Kotlin** and **Jetpack Compose**.  
 
@@ -15,11 +17,24 @@ a **Material You** alarm app for Android, being built with **Kotlin** and **Jetp
 ## Goal
 A Simple yet effective way to wake up for both heavy sleepers or normal users ; using Challenges like scanning a QR code or walking a few steps
 
-## Installation
-Download the latest **Release** from GitHub and install on your device.  
+## ⬇️ Installation
 
+You can download and install Raise alpha build using any of the following methods:
+
+- **GitHub Releases**: You can download the latest APK from the [GitHub releases page](https://github.com/hesCalledAJ/Raise/releases).
+  <p align="center">
+    <a href="https://github.com/hesCalledAJ/Raise/releases"><img src="https://raw.githubusercontent.com/Kunzisoft/Github-badge/main/get-it-on-github.png" alt="Get it on GitHub" height="60" style="max-width: 200px"></a>
+  </p>
+
+- **Obtainium**: You can also add the app to [Obtainium](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.aj.raise%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FhesCalledAJ%2FRaise%2Freleases%22%2C%22author%22%3A%22hesCalledAJ%22%2C%22name%22%3A%22Raise%22%2C%22supportFixedAPKURL%22%3Afalse%7D
+) for easy updates and management.
+  <p align="center">
+    <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.aj.raise%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FhesCalledAJ%2FRaise%2Freleases%22%2C%22author%22%3A%22hesCalledAJ%22%2C%22name%22%3A%22Raise%22%2C%22supportFixedAPKURL%22%3Afalse%7D"><img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="40"></a>
+  </p>
 ## Tech Stack
 - **Language:** Kotlin  
 - **Architecture:** MVVM + Clean Architecture  
 - **Dependency Injection:** Hilt  
 - **Database:** Room  
+
+
