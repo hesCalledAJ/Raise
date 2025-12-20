@@ -5,7 +5,6 @@ import android.app.AlarmManager
 import android.app.NotificationManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -16,10 +15,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -33,11 +30,11 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import com.alijafari.raise.core.ui.theme.Wakee2Theme
 import com.alijafari.raise.feature_alarm.data.AlarmBroadcastEvent
 import com.alijafari.raise.feature_alarm.data.AlarmIntentExtra
@@ -46,7 +43,6 @@ import com.alijafari.raise.feature_alarm.presentation.AlarmsScreen
 import com.alijafari.raise.feature_alarm.presentation.AlarmsViewModel
 import com.alijafari.raise.feature_alarm.presentation.editor.EditorBottomSheet
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.core.net.toUri
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -136,6 +132,7 @@ fun MainScreen(
                         ).apply {
                             action = AlarmBroadcastEvent.PREVIEW()
                             putExtra(AlarmIntentExtra.ID(), it.id)
+                            putExtra(AlarmIntentExtra.PREVIEW_ALARM_OBJECT(), it)
                         }
                     )
                 }

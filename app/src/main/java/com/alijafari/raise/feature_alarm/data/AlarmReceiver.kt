@@ -3,7 +3,9 @@ package com.alijafari.raise.feature_alarm.data
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import com.alijafari.raise.feature_alarm.data.service.AlarmService
+import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_logs.data.repository.LogRepositoryImpl
 import com.alijafari.raise.feature_logs.domain.model.EventLog
 
@@ -17,6 +19,7 @@ enum class AlarmBroadcastEvent(val value: String) {
 }
 enum class AlarmIntentExtra(val value: String) {
     ID("id"),
+    PREVIEW_ALARM_OBJECT("preview_alarm_object"),
     ACTUAL_TRIGGER_MILLIS("actual_trigger_millis");
     operator fun invoke() = value
 }
@@ -25,7 +28,15 @@ class AlarmReceiver : BroadcastReceiver() {
     val logRepository = LogRepositoryImpl()
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent == null) return
+
         val id = intent.getIntExtra(AlarmIntentExtra.ID(),-1)
+        val previewAlarm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(AlarmIntentExtra.PREVIEW_ALARM_OBJECT(), Alarm::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(AlarmIntentExtra.PREVIEW_ALARM_OBJECT())
+        }
+
         logRepository.logEvent(
             EventLog(
                 event = "AlarmReceiver",
@@ -38,6 +49,7 @@ class AlarmReceiver : BroadcastReceiver() {
             ).apply {
                 action = intent.action
                 putExtra(AlarmIntentExtra.ID(),id)
+                putExtra(AlarmIntentExtra.PREVIEW_ALARM_OBJECT(), previewAlarm)
             }
         )
     }

@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Intent
 import android.os.Binder
+import android.os.Build
 import android.os.IBinder
 import com.alijafari.raise.feature_alarm.data.AlarmBroadcastEvent
 import com.alijafari.raise.feature_alarm.data.AlarmIntentExtra
@@ -194,8 +195,8 @@ class AlarmService : Service() {
         })
 
         when (intent.action) {
-            AlarmBroadcastEvent.PREVIEW() -> handlePreview()
-            AlarmBroadcastEvent.RING() -> handleRing()
+            AlarmBroadcastEvent.PREVIEW() -> handlePreview(intent)
+            AlarmBroadcastEvent.RING() -> handleRing(intent)
             AlarmBroadcastEvent.SNOOZE() -> handleSnooze()
             AlarmBroadcastEvent.KILL() -> handleDismiss()
             else -> {
@@ -212,9 +213,9 @@ class AlarmService : Service() {
         stopService()
     }
 
-    private fun handleRing() {
+    private fun handleRing(intent: Intent?) {
         scope.launch {
-            initializeAlarm()
+            initializeAlarm(intent)
             state.ring()
             startActivity(
                 Intent(
@@ -226,11 +227,18 @@ class AlarmService : Service() {
         }
     }
 
-    private suspend fun initializeAlarm() {
-        try {
-            alarm.toString()
-        } catch (_: UninitializedPropertyAccessException) {
-            alarm = useCases.getById(alarmId)
+    private suspend fun initializeAlarm(intent: Intent?) {
+        if (::alarm.isInitialized.not()) {
+            val alarmFromIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent?.getParcelableExtra(
+                    AlarmIntentExtra.PREVIEW_ALARM_OBJECT(),
+                    Alarm::class.java
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                intent?.getParcelableExtra(AlarmIntentExtra.PREVIEW_ALARM_OBJECT())
+            }
+            alarm = alarmFromIntent ?: useCases.getById(alarmId)
         }
         state = AlarmState(
             alarm = alarm,
@@ -258,9 +266,9 @@ class AlarmService : Service() {
         }
     }
 
-    private fun handlePreview() {
+    private fun handlePreview(intent: Intent?) {
         isPreview = true
-        handleRing()
+        handleRing(intent)
     }
 
     @SuppressLint("ScheduleExactAlarm")

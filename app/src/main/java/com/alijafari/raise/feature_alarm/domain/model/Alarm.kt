@@ -1,28 +1,28 @@
 package com.alijafari.raise.feature_alarm.domain.model
 
 
-
-
+import android.os.Parcelable
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
+import kotlinx.parcelize.Parcelize
 import java.util.Calendar
 import kotlin.random.Random
 
-
+@Parcelize
 data class Alarm(
     val id: Int = 0,
     var hour: Int = 7,
     var minute: Int = 0,
-    val snoozeCount : Int = 0,
-    val snoozeMinutes : Int = 5,
-    val vibrate : Boolean = true,
+    val snoozeCount: Int = 0,
+    val snoozeMinutes: Int = 5,
+    val vibrate: Boolean = true,
     val isEnabled: Boolean = true,
-    val ringtoneVolume : Float = 0.9f,
+    val ringtoneVolume: Float = 0.9f,
     val label: String = "Good Morning !",
-    val ringtoneData : RingtoneData? = null,
-    val repeatDays : List<Int> = emptyList(),
-    val smartOffsetData : OffsetData = OffsetData(),
-    val timeBombData : TimeBombData = TimeBombData(),
-){
+    val ringtoneData: RingtoneData? = null,
+    val repeatDays: List<Int> = emptyList(),
+    val smartOffsetData: OffsetData = OffsetData(),
+    val timeBombData: TimeBombData = TimeBombData(),
+) : Parcelable {
     fun getNextActualTriggerAtMillis(lastNominal: Long? = null): Long {
         val base = Calendar.getInstance()
 
@@ -52,6 +52,9 @@ data class Alarm(
 
         return alarmCal.timeInMillis
     }
-    
-    fun getRandomSmartOffsetMillis() = if (smartOffsetData.enabled) Random.nextInt(smartOffsetData.range.first,smartOffsetData.range.last) * 60 * 1000 else 0
+
+    fun getRandomSmartOffsetMillis() = if (smartOffsetData.enabled) Random.nextInt(
+        smartOffsetData.range.first,
+        smartOffsetData.range.last
+    ) * 60 * 1000 else 0
 }
