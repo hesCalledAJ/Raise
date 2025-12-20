@@ -107,7 +107,6 @@ class RingtonePlayerImpl @Inject constructor(
         val vib = context.getSystemService(VIBRATOR_SERVICE) as? Vibrator ?: return
         vibrator = vib
 
-        // Safety checks
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!vib.hasVibrator()) return
         }
@@ -134,21 +133,24 @@ class RingtonePlayerImpl @Inject constructor(
 
     override fun playTimeBombSound() {
         stop()
-        val mp = MediaPlayer.create(context, R.raw.loud).apply {
+        val mp = MediaPlayer().apply {
             setAudioAttributes(
                 AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build()
             )
+            val afd = context.resources.openRawResourceFd(R.raw.loud)
+            setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+            afd.close()
             isLooping = true
+            setVolume(1.0f, 1.0f)
+            prepare()
         }
 
         mediaPlayer = mp
 
-        mp.setVolume(1.0f, 1.0f)
-
-        mp.start()
+        mediaPlayer?.start()
         startVibration()
     }
 }
