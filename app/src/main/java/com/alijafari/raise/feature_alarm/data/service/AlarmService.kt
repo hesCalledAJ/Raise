@@ -100,16 +100,22 @@ class AlarmState(
                 log?.invoke("TimeBomb finished")
                 _status.value = AlarmStatus.TimeBombRinging
                 ringtonePlayer.playTimeBombSound()
-            }
+            },
+            initialDelayMs = 10_000L
         )
     }
 
     private fun startCountdown(
         totalMs: Long,
         onTick: (Long) -> Unit,
-        onFinished: () -> Unit
+        onFinished: () -> Unit,
+        initialDelayMs: Long = 0L
     ) {
         countdownJob = scope.launch {
+            if (initialDelayMs > 0) {
+                delay(initialDelayMs)
+            }
+
             val startTime = System.currentTimeMillis()
             val endTime = startTime + totalMs
 
@@ -121,6 +127,7 @@ class AlarmState(
             onFinished()
         }
     }
+
 
     fun cancelTimeBomb() {
         if (_status.value is AlarmStatus.TimeBombRinging) {
@@ -259,11 +266,11 @@ class AlarmService : Service() {
     private fun rescheduleAlarmRepeats() {
         logStep("Repeat Scheduled ${alarm.repeatDays}")
         if (alarm.repeatDays.isEmpty()) {
-            useCases.schedule(alarm,actualTriggerMillis)
-        }else {
             scope.launch {
                 useCases.upsert(alarm.copy(isEnabled = false))
             }
+        }else {
+            useCases.schedule(alarm,actualTriggerMillis)
         }
     }
 

@@ -40,6 +40,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -66,7 +67,6 @@ fun DraggableAlarmDataContainer(
     isSnoozed: Boolean,
     state: RingScreenState,
     maxDismissSheetFraction: Float,
-    effectiveDismissSheetFraction: Float,
     screenHeightPx: Float,
     snoozedUntil: Long,
     snoozeRemaining: Long,
@@ -75,9 +75,10 @@ fun DraggableAlarmDataContainer(
     val sheetFraction by remember { state.sheetFractionState }
 
     val isDragging by remember { derivedStateOf { state.isDragging } }
+    val effectiveDismissSheetFraction by state.effectiveSheetFraction
 
     val scale = animateFloatAsState(
-        targetValue = if (!isDragging) .95f else 1.05f,
+        targetValue = if (!isDragging || isSnoozed) .95f else 1.05f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioHighBouncy,
             stiffness = 500f
@@ -92,7 +93,7 @@ fun DraggableAlarmDataContainer(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        AnimatedVisibility(state.screenState.value == RingDragState.IDLE && !isSnoozed) {
+        AnimatedVisibility(state.screenState.value == RingDragState.IDLE) {
             SwipeHintArrows(true, stringResource(R.string.dismiss))
         }
 
@@ -108,10 +109,7 @@ fun DraggableAlarmDataContainer(
                     val finalOffset = if (interpolated < maxUpOffset) maxUpOffset else interpolated
                     IntOffset(0, finalOffset.roundToInt())
                 }
-                .then(
-                    if (!isSnoozed) Modifier.ringDrag(state, 1.5f)
-                    else Modifier
-                )
+                .ringDrag(state, 1.5f)
                 .padding(vertical = 6.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -132,22 +130,22 @@ fun DraggableAlarmDataContainer(
         }
         AnimatedVisibility(isSnoozed) {
             Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = state.onDismissOrSkip,
-                modifier = Modifier
-                    .fillMaxWidth(.7f)
-                    .height(55.dp),
-                shape = RoundedCornerShape(17.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            ) {
-                Text(
-                    "Skip",
-                    fontSize = 15.sp
-                )
-            }
+//            Button(
+//                onClick = state.onDismissOrSkip,
+//                modifier = Modifier
+//                    .fillMaxWidth(.7f)
+//                    .height(55.dp),
+//                shape = RoundedCornerShape(17.dp),
+//                colors = ButtonDefaults.buttonColors(
+//                    containerColor = MaterialTheme.colorScheme.errorContainer,
+//                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+//                )
+//            ) {
+//                Text(
+//                    "Skip",
+//                    fontSize = 15.sp
+//                )
+//            }
         }
     }
 }
@@ -217,7 +215,7 @@ fun AlarmData(
                         val progress = 1f - snoozeRemaining / (alarm.snoozeMinutes * 60000f)
                         progress.coerceIn(0f, 1f)
                     },
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().alpha(1 - dragProgress),
                     wavelength = 100.dp,
                     stroke = Stroke(width = with(density) { 13.dp.toPx() }, cap = StrokeCap.Round),
                     trackStroke = Stroke(
@@ -264,7 +262,7 @@ fun AlarmData(
 private fun Modifier.ringDrag(
     state: RingScreenState,
     dragMultiplier: Float,
-): Modifier = this.pointerInput(Unit) {
+): Modifier = this.pointerInput(state) {
     detectVerticalDragGestures(
         onDragStart = {
             state.isDragging = true

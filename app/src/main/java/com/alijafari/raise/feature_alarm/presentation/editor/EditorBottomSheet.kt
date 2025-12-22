@@ -1,6 +1,7 @@
 package com.alijafari.raise.feature_alarm.presentation.editor
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,9 +21,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Switch
@@ -30,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,7 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -67,7 +70,7 @@ import com.alijafari.raise.feature_alarm.presentation.editor.components.TimePick
 import com.alijafari.raise.feature_alarm.presentation.editor.components.rememberCardSliderState
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun EditorBottomSheet(
     viewModel: AlarmsViewModel,
@@ -88,7 +91,8 @@ fun EditorBottomSheet(
     var isSnoozePickerVisible by rememberSaveable { mutableStateOf(false) }
     var isTimePickerVisible by rememberSaveable { mutableStateOf(false) }
     val timePickerState = rememberTimePickerState(
-        initialHour = editingAlarm.hour, initialMinute = editingAlarm.minute
+        initialHour = editingAlarm.hour,
+        initialMinute = editingAlarm.minute
     )
 
     LaunchedEffect(editingAlarm) {
@@ -126,10 +130,13 @@ fun EditorBottomSheet(
         timePickerState = timePickerState,
         onDismiss = { isTimePickerVisible = false },
         onConfirm = {
-            isTimePickerVisible = false
             viewModel.setEditingAlarmEdit(
-                editingAlarm.copy(hour = timePickerState.hour, minute = timePickerState.minute)
+                editingAlarm.copy(
+                    hour = timePickerState.hour,
+                    minute = timePickerState.minute
+                )
             )
+            isTimePickerVisible = false
         })
     MinuteSelectorDialog(
         isVisible = isSnoozePickerVisible,
@@ -201,7 +208,7 @@ fun EditorBottomSheet(
         sheetState = sheetState
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 10.dp),
+            modifier = Modifier.padding(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(
@@ -228,120 +235,152 @@ fun EditorBottomSheet(
                     )
                 }
 
+//                val icButtonAngle = animateFloatAsState(
+//                    targetValue = if (isTimeBombDialogVisible) 90f else 0f,
+//                    animationSpec = spring(
+//                        dampingRatio = Spring.DampingRatioHighBouncy,
+//                        stiffness = 500f
+//                    ),
+//                    label = "bounceScale"
+//                ).value
                 IconButton(
-                    modifier = Modifier.size(45.dp), colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ), onClick = {
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = MaterialShapes.Pill.toShape()
+                        ),
+                    onClick = {
                         isTimePickerVisible = true
                     }) {
                     Icon(
-                        painterResource(R.drawable.ic_pen), null, Modifier.padding(5.dp)
+                        painterResource(R.drawable.ic_pen),
+                        null,
+                        Modifier.padding(5.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(11.dp))
-            Column(
+            Box(
                 Modifier
+                    .padding(vertical = 9.dp)
                     .weight(1f, fill = false)
-                    .verticalScroll(rememberScrollState())
-            )
-            {
-                EditorCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        isTitleDialogVisible = true
-                    },
-                    icon = painterResource(R.drawable.ic_label),
-                    title = "Title",
-                    position = if (isTitleDialogVisible) CardPosition.ONLY else CardPosition.FIRST
-                ) {
-                    Text(text = editingAlarm.label)
-                }
-                EditorCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        isRepeatDialogVisible = true
-                    },
-                    icon = painterResource(R.drawable.ic_repeat),
-                    title = "Repeat Days",
-                    position = if (isRepeatDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE
-                ) {
-                    Text(text = formatSelectedDays(editingAlarm.repeatDays))
-                }
-                EditorCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        isSnoozePickerVisible = true
-                    },
-                    icon = painterResource(R.drawable.ic_snooze),
-                    title = "Snooze",
-                    position = if (isSnoozePickerVisible) CardPosition.ONLY else CardPosition.LAST
-                ) {
-                    Text(
-                        text = if (editingAlarm.snoozeMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
-                            R.string.n_minutes,
-                            editingAlarm.snoozeMinutes
+                    .clip(RoundedCornerShape(15.dp))
+            ) {
+                Column(
+                    Modifier
+                        .verticalScroll(rememberScrollState())
+                )
+                {
+                    EditorCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            isTitleDialogVisible = true
+                        },
+                        icon = painterResource(R.drawable.ic_label),
+                        title = "Title",
+                        position = if (isTitleDialogVisible) CardPosition.ONLY else CardPosition.FIRST
+                    ) {
+                        Text(text = editingAlarm.label)
+                    }
+                    EditorCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            isRepeatDialogVisible = true
+                        },
+                        icon = painterResource(R.drawable.ic_repeat),
+                        title = "Repeat Days",
+                        position = if (isRepeatDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE
+                    ) {
+                        Text(text = formatSelectedDays(editingAlarm.repeatDays))
+                    }
+                    EditorCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            isSnoozePickerVisible = true
+                        },
+                        icon = painterResource(R.drawable.ic_snooze),
+                        title = "Snooze",
+                        position = if (isSnoozePickerVisible) CardPosition.ONLY else CardPosition.LAST
+                    ) {
+                        Text(
+                            text = if (editingAlarm.snoozeMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
+                                R.string.n_minutes,
+                                editingAlarm.snoozeMinutes
+                            )
                         )
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
-                EditorCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        isRingtoneDialogVisible = true
-                    },
-                    icon = painterResource(if (editingAlarm.ringtoneVolume == 0f) R.drawable.ic_speaker_disabled else if (editingAlarm.ringtoneVolume <= 0.4f) R.drawable.ic_speaker_low else R.drawable.ic_speaker_loud),
-                    title = "Ringtone",
-                    sliderState = if (editingAlarm.ringtoneData?.uri == null) null else rememberCardSliderState(
-                        value = editingAlarm.ringtoneVolume,
-                        onDragStateChange = { isDragging ->
-                            if (isDragging){
-                                editingAlarm.ringtoneData.let {
-                                    viewModel.ringtonePreviewPlayer.stop()
-                                    viewModel.ringtonePreviewPlayer.play(it, editingAlarm.ringtoneVolume)
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    EditorCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            isRingtoneDialogVisible = true
+                        },
+                        icon = painterResource(if (editingAlarm.ringtoneVolume == 0f) R.drawable.ic_speaker_disabled else if (editingAlarm.ringtoneVolume <= 0.4f) R.drawable.ic_speaker_low else R.drawable.ic_speaker_loud),
+                        title = "Ringtone",
+                        sliderState = if (editingAlarm.ringtoneData?.uri == null) null else rememberCardSliderState(
+                            value = editingAlarm.ringtoneVolume,
+                            onDragStateChange = { isDragging ->
+                                if (isDragging) {
+                                    editingAlarm.ringtoneData.let {
+                                        viewModel.ringtonePreviewPlayer.stop()
+                                        viewModel.ringtonePreviewPlayer.play(
+                                            it,
+                                            editingAlarm.ringtoneVolume
+                                        )
+                                    }
                                 }
                             }
-                        }
-                    ){
-                        viewModel.setEditingAlarmEdit(
-                            editingAlarm.copy(ringtoneVolume = it)
-                        )
-                    },
-                    position = if (isRingtoneDialogVisible) CardPosition.ONLY else CardPosition.FIRST
-                ) {
-                    if (editingAlarm.ringtoneData != null && editingAlarm.ringtoneVolume != 0f) {
-                        Text(text = editingAlarm.ringtoneData.name ?: "Unknown")
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(text = "${(editingAlarm.ringtoneVolume * 100f).roundToInt()}%")
-                    } else Text(text = stringResource(R.string.silent))
-                }
-                EditorCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        isRepeatDialogVisible = true
-                    },
-                    icon = painterResource(R.drawable.ic_vibrate),
-                    title = stringResource(R.string.editor_vibrate_title),
-                    position = CardPosition.LAST
-                ) {
-                    Switch(
-                        modifier = Modifier.height(24.dp),
-                        checked = editingAlarm.vibrate,
-                        onCheckedChange = {
+                        ) {
                             viewModel.setEditingAlarmEdit(
                                 editingAlarm.copy(
-                                    vibrate = it
+                                    ringtoneVolume = it,
+                                    hour = timePickerState.hour,
+                                    minute = timePickerState.minute
                                 )
-                            )
-                        })
-                }
+                                //TODO hotfix for the time reset bug . solve later , this is the bad verson below :
 
-                Box {
+//                                    editingAlarm.copy(
+//                                        ringtoneVolume = it,
+//                                        hour = timePickerState.hour,
+//                                       minute = timePickerState.minute)
+                            )
+                        },
+                        position = if (isRingtoneDialogVisible) CardPosition.ONLY else CardPosition.FIRST
+                    ) {
+                        if (editingAlarm.ringtoneData != null && editingAlarm.ringtoneVolume != 0f) {
+                            Text(text = editingAlarm.ringtoneData.name ?: "Unknown")
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text(text = "${(editingAlarm.ringtoneVolume * 100f).roundToInt()}%")
+                        } else Text(text = stringResource(R.string.silent))
+                    }
+                    EditorCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            isRepeatDialogVisible = true
+                        },
+                        icon = painterResource(R.drawable.ic_vibrate),
+                        title = stringResource(R.string.editor_vibrate_title),
+                        position = CardPosition.LAST
+                    ) {
+                        Switch(
+                            modifier = Modifier.height(24.dp),
+                            checked = editingAlarm.vibrate,
+                            onCheckedChange = {
+                                viewModel.setEditingAlarmEdit(
+                                    editingAlarm.copy(
+                                        vibrate = it
+                                    )
+                                )
+                            })
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Box {
                         this@Column.AnimatedVisibility(isExpanded.not()) {
                             Box(Modifier.fillMaxWidth()) {
                                 EditorCard(
                                     modifier = Modifier
+                                        .padding(bottom = 4.dp)
                                         .fillMaxWidth(.94f)
                                         .offset(y = 7.dp)
                                         .zIndex(-1f)
@@ -395,98 +434,88 @@ fun EditorBottomSheet(
                             )
                         }
                     }
-                AnimatedVisibility(isExpanded) {
-                    Column {
-//                        EditorCard(
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .zIndex(2f),
-//                            icon = painterResource(R.drawable.ic_challenge),
-//                            title = stringResource(R.string.editor_challenges_title),
-//                            position = CardPosition.MIDDLE,
-//                        ) {
-//                            Text(text = stringResource(R.string.silent))
-//                        }
-                        val context = LocalContext.current
-                        EditorCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .zIndex(2f),
-                            icon = painterResource(R.drawable.ic_timer),
-                            title = stringResource(R.string.editor_offset_title),
-                            subTitle = editingAlarm.makeOffsetSubtitle(context),
-                            position = CardPosition.MIDDLE,
-                            onClick = {
-                                isOffsetDialogVisible = true
-                            }
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(9.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                    AnimatedVisibility(isExpanded) {
+                        Column {
+                            val context = LocalContext.current
+                            EditorCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .zIndex(2f),
+                                icon = painterResource(R.drawable.ic_timer),
+                                title = stringResource(R.string.editor_offset_title),
+                                subTitle = editingAlarm.makeOffsetSubtitle(context),
+                                position = if (isOffsetDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE,
+                                onClick = {
+                                    isOffsetDialogVisible = true
+                                }
                             ) {
-                                VerticalDivider(
-                                    Modifier.height(22.dp),
-                                    2.dp,
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Switch(
-                                    modifier = Modifier.height(24.dp),
-                                    checked = editingAlarm.smartOffsetData.enabled,
-                                    onCheckedChange = {
-                                        viewModel.setEditingAlarmEdit(
-                                            editingAlarm.copy(
-                                                smartOffsetData = editingAlarm.smartOffsetData.copy(
-                                                    enabled = it
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    VerticalDivider(
+                                        Modifier.height(22.dp),
+                                        2.dp,
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Switch(
+                                        modifier = Modifier.height(24.dp),
+                                        checked = editingAlarm.smartOffsetData.enabled,
+                                        onCheckedChange = {
+                                            viewModel.setEditingAlarmEdit(
+                                                editingAlarm.copy(
+                                                    smartOffsetData = editingAlarm.smartOffsetData.copy(
+                                                        enabled = it
+                                                    )
                                                 )
                                             )
-                                        )
-                                    }
-                                )
+                                        }
+                                    )
+                                }
                             }
-                        }
-                        EditorCard(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .zIndex(2f),
-                            icon = painterResource(R.drawable.ic_bomb),
-                            title = stringResource(R.string.editor_loud_title),
-                            subTitle = stringResource(
-                                R.string.editor_loud_bomb_delay_description,
-                                editingAlarm.timeBombData.delaySeconds
-                            ),
-                            position = CardPosition.LAST,
-                            onClick = {
-                                isTimeBombDialogVisible = true
-                            }
-                        ) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(9.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            EditorCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .zIndex(2f),
+                                icon = painterResource(R.drawable.ic_bomb),
+                                title = stringResource(R.string.editor_loud_title),
+                                subTitle = stringResource(
+                                    R.string.editor_loud_bomb_delay_description,
+                                    editingAlarm.timeBombData.delaySeconds
+                                ),
+                                position = if (isTimeBombDialogVisible) CardPosition.ONLY else CardPosition.LAST,
+                                onClick = {
+                                    isTimeBombDialogVisible = true
+                                }
                             ) {
-                                VerticalDivider(
-                                    Modifier.height(22.dp),
-                                    2.dp,
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Switch(
-                                    modifier = Modifier.height(24.dp),
-                                    checked = editingAlarm.timeBombData.enabled,
-                                    onCheckedChange = {
-                                        viewModel.setEditingAlarmEdit(
-                                            editingAlarm.copy(
-                                                timeBombData = editingAlarm.timeBombData.copy(
-                                                    enabled = it
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    VerticalDivider(
+                                        Modifier.height(22.dp),
+                                        2.dp,
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Switch(
+                                        modifier = Modifier.height(24.dp),
+                                        checked = editingAlarm.timeBombData.enabled,
+                                        onCheckedChange = {
+                                            viewModel.setEditingAlarmEdit(
+                                                editingAlarm.copy(
+                                                    timeBombData = editingAlarm.timeBombData.copy(
+                                                        enabled = it
+                                                    )
                                                 )
                                             )
-                                        )
-                                    }
-                                )
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(7.dp))
             Row {
                 Button(
                     onClick = {
@@ -521,7 +550,6 @@ fun EditorBottomSheet(
                 ) { Text("Save") }
                 Spacer(Modifier.width(5.dp))
             }
-            Spacer(modifier = Modifier.height(6.dp))
         }
     }
 }

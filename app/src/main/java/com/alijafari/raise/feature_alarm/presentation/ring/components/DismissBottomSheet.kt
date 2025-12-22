@@ -17,7 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDragHandle
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -30,13 +30,13 @@ import com.alijafari.raise.feature_alarm.presentation.ring.RingScreenState
 
 @Composable
 fun DismissBottomSheet(
-    effectiveSheetFraction: Float,
     state: RingScreenState,
     onDragDown: (Float) -> Unit,
-    onRelease: () -> Unit
+    onRelease: () -> Unit,
 ) {
-    val scrimModifier = if (effectiveSheetFraction != 0f) Modifier.pointerInput(Unit) {} else Modifier
-
+    val effectiveSheetFraction by state.effectiveSheetFraction
+    val scrimModifier =
+        if (effectiveSheetFraction != 0f) Modifier.pointerInput(Unit) {} else Modifier
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -73,10 +73,10 @@ fun DismissBottomSheet(
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
-                        text = if (state.screenState.value == RingDragState.DRAGGING_UP_DONE){
+                        text = if (state.screenState.value == RingDragState.DRAGGING_UP_DONE) {
                             if (!state.isDragging) "Alarm Dismissed"
                             else "Release to dismiss"
-                        }  else "Drag up to dismiss",
+                        } else "Drag up to dismiss",
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -91,7 +91,7 @@ private fun BottomSheetOverlay(
     fraction: Float,
     onDragDown: (deltaPx: Float) -> Unit,
     onRelease: () -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val screenHeightPx = with(LocalDensity.current) {
         LocalConfiguration.current.screenHeightDp.dp.toPx()
@@ -114,6 +114,7 @@ private fun BottomSheetOverlay(
                     onDragEnd = { onRelease() }
                 )
             }
+
     ) {
         content()
     }

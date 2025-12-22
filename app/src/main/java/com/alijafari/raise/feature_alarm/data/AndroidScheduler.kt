@@ -81,7 +81,6 @@ class AndroidScheduler @Inject constructor(
     @SuppressLint("ScheduleExactAlarm")
     @RequiresPermission(Manifest.permission.SCHEDULE_EXACT_ALARM)
     override fun cancelSnooze(alarm: Alarm) {
-        if (!alarm.isEnabled) return
         alarmManager.cancel(buildPendingIntent(alarm, 5000))
         logRepository.logEvent(EventLog("Snooze Cancelled", "AndroidScheduler snooze cancelled for $alarm"))
     }

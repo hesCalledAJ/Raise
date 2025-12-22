@@ -4,16 +4,18 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -58,15 +60,17 @@ class RingScreenState(
     private val maxSheetFraction: Float,
     private val onSnooze: () -> Unit,
     private val onInteractionStarted: () -> Unit,
-    val onDismissOrSkip: () -> Unit
+    val onDismiss: () -> Unit,
+    val onSkipSnooze: () -> Unit,
 ) {
     private val _dragOffset = Animatable(0f)
     private val _sheetFraction = Animatable(0f)
     val dragOffsetState: State<Float> = derivedStateOf { _dragOffset.value }
     val sheetFractionState: State<Float> = derivedStateOf { _sheetFraction.value }
 
-
     var isDragging by mutableStateOf(false)
+    var isSnoozed by mutableStateOf(false)
+
 
     val effectiveSheetFraction = derivedStateOf {
         val fraction = (-_dragOffset.value / screenHeightPx).coerceIn(0f, null)
@@ -75,6 +79,7 @@ class RingScreenState(
 
     val screenState = derivedStateOf {
         computeDragState(
+            isSnoozed = isSnoozed,
             isDragging = isDragging,
             dragOffset = _dragOffset.value,
             sheetFraction = _sheetFraction.value,
@@ -148,11 +153,13 @@ class RingScreenState(
 
     private suspend fun dismissRequested() {
         delay(DISMISS_DELAY_MS)
-        onDismissOrSkip()
+        if (isSnoozed) onSkipSnooze()
+        else onDismiss()
     }
 
     private fun computeDragState(
         dragOffset: Float,
+        isSnoozed: Boolean,
         isDragging: Boolean,
         sheetFraction: Float,
         dragThresholdPx: Float,
@@ -166,21 +173,30 @@ class RingScreenState(
         dragOffset < 0 -> RingDragState.DRAGGING_UP
 
         else -> RingDragState.IDLE
+//        else -> if (isSnoozed) RingDragState.SNOOZED else RingDragState.IDLE
     }
 }
 
 @Composable
 fun rememberRingScreenState(
-    isSnoozed: Boolean,
     onSnooze: () -> Unit,
     screenHeightPx: Float,
     dragThresholdPx: Float,
     onInteractionStarted: () -> Unit,
-    onDismissOrSkip: () -> Unit,
+    onDismiss: () -> Unit,
+    onSkipSnooze: () -> Unit,
     scope: CoroutineScope = rememberCoroutineScope(),
-    maxSheetFraction: Float = MAX_SHEET_FRACTION
+    maxSheetFraction: Float = MAX_SHEET_FRACTION,
 ): RingScreenState =
-    remember(isSnoozed,scope, screenHeightPx, dragThresholdPx, maxSheetFraction, onSnooze, onDismissOrSkip) {
+    remember(
+        scope,
+        screenHeightPx,
+        dragThresholdPx,
+        maxSheetFraction,
+        onSnooze,
+        onSkipSnooze,
+        onDismiss
+    ) {
         RingScreenState(
             scope,
             screenHeightPx,
@@ -188,7 +204,8 @@ fun rememberRingScreenState(
             maxSheetFraction,
             onSnooze,
             onInteractionStarted,
-            onDismissOrSkip
+            onDismiss,
+            onSkipSnooze
         )
     }
 
@@ -212,26 +229,25 @@ fun RingScreen(
     val screenHeightPx = remember { with(density) { screenHeight.dp.toPx() } }
     val dragThresholdPx = remember { with(density) { SNOOZE_THRESHOLD_DP.dp.toPx() } }
 
-    val isSnoozed = alarmStatus is AlarmStatus.Snoozed
     val state = rememberRingScreenState(
-        isSnoozed = isSnoozed,
         screenHeightPx = screenHeightPx,
         dragThresholdPx = dragThresholdPx,
         onSnooze = onSnooze,
         onInteractionStarted = onInteractionStarted,
-        onDismissOrSkip = { if (isSnoozed) onSkipSnooze() else onDismiss() }
+        onSkipSnooze = { onSkipSnooze() },
+        onDismiss = { onDismiss() }
     )
+    SideEffect {
+        state.isSnoozed = alarmStatus is AlarmStatus.Snoozed
+    }
 
     val dragOffset by remember { state.dragOffsetState }
-    val effectiveSheetFraction by state.effectiveSheetFraction
     val screenState by state.screenState
 
     Surface(modifier = modifier.fillMaxSize()) {
         if (alarm == null) {
-            LoadingIndicator()
             return@Surface
         }
-
         Box(modifier = Modifier.fillMaxSize()) {
             SnoozeTopShape(
                 screenState = screenState,
@@ -242,43 +258,43 @@ fun RingScreen(
 
             DraggableAlarmDataContainer(
                 alarm = alarm,
-                isSnoozed = isSnoozed,
+                isSnoozed = state.isSnoozed,
                 state = state,
                 maxDismissSheetFraction = MAX_SHEET_FRACTION,
                 screenHeightPx = screenHeightPx,
-                effectiveDismissSheetFraction = effectiveSheetFraction,
-                snoozedUntil = if (isSnoozed) alarmStatus.targetTimeMs else -1L,
-                snoozeRemaining = if (isSnoozed) alarmStatus.remainingMs else -1L,
+                snoozedUntil = if (state.isSnoozed) (alarmStatus as AlarmStatus.Snoozed).targetTimeMs else -1L,
+                snoozeRemaining = if (state.isSnoozed) (alarmStatus as AlarmStatus.Snoozed).remainingMs else -1L,
             )
             AnimatedVisibility(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 12.dp),
                 visible = alarmStatus is AlarmStatus.TimeBombCountDown || alarmStatus is AlarmStatus.TimeBombRinging,
-                enter = slideInHorizontally(
+                enter = slideInVertically(
+                    initialOffsetY = { it },
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
                         stiffness = Spring.StiffnessLow
                     )
-                ),
+                ) + fadeIn(),
                 exit = slideOutVertically(
+                    targetOffsetY = { it },
                     animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        dampingRatio = Spring.DampingRatioLowBouncy,
                         stiffness = Spring.StiffnessMedium
                     )
                 )
             ) {
 
-                val progress =if (alarmStatus is AlarmStatus.TimeBombCountDown) 1f - alarmStatus.remainingMs.toFloat() / alarmStatus.totalMs.toFloat() else 1f
+                val progress =
+                    if (alarmStatus is AlarmStatus.TimeBombCountDown) 1f - alarmStatus.remainingMs.toFloat() / alarmStatus.totalMs.toFloat() else 1f
                 progress.coerceIn(0f, 1f)
                 TimeBombPill(
                     progress = progress,
                     remainingSeconds = if (alarmStatus is AlarmStatus.TimeBombCountDown) alarmStatus.remainingMs / 1000 else 0
                 )
             }
-
             DismissBottomSheet(
-                effectiveSheetFraction = effectiveSheetFraction,
                 state = state,
                 onDragDown = state::bottomSheetDragDown,
                 onRelease = state::bottomSheetRelease
@@ -286,6 +302,7 @@ fun RingScreen(
         }
     }
 }
+
 //
 @Preview(showBackground = true)
 @Composable
@@ -294,7 +311,7 @@ fun RingScreenPreview() {
         RingScreen(
             modifier = Modifier,
             alarm = Alarm(),
-            alarmStatus = AlarmStatus.TimeBombCountDown(20000L,20000L),
+            alarmStatus = AlarmStatus.TimeBombCountDown(20000L, 20000L),
             onDismiss = {},
             onInteractionStarted = {},
             onSkipSnooze = {},
