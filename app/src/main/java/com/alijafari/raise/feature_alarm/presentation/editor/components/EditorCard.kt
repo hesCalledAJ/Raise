@@ -159,11 +159,6 @@ fun EditorCard(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(8.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape = RoundedCornerShape(7.dp)
-                            )
-                            .padding(15.dp)
                             .clickable(
                                 enabled = onBigContentClicked != null,
                                 onClick = onBigContentClicked ?: {},

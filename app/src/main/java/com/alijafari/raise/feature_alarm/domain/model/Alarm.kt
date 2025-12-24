@@ -2,6 +2,7 @@ package com.alijafari.raise.feature_alarm.domain.model
 
 
 import android.os.Parcelable
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeModel
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 import kotlinx.parcelize.Parcelize
 import java.util.Calendar
@@ -22,6 +23,7 @@ data class Alarm(
     val repeatDays: List<Int> = emptyList(),
     val smartOffsetData: OffsetData = OffsetData(),
     val timeBombData: TimeBombData = TimeBombData(),
+    var challengesList: ArrayList<ChallengeModel> = arrayListOf()
 ) : Parcelable {
     fun getNextActualTriggerAtMillis(lastNominal: Long? = null): Long {
         val base = Calendar.getInstance()

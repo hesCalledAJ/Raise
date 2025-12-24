@@ -15,7 +15,8 @@ fun AlarmEntity.toDomain(): Alarm = Alarm(
     timeBombData = timeBombData,
     snoozeMinutes = snoozeMinutes,
     ringtoneVolume = ringtoneVolume,
-    smartOffsetData = offsetData
+    smartOffsetData = offsetData,
+    challengesList = challengesList
 )
 
 fun Alarm.toEntity(): AlarmEntity = AlarmEntity(
@@ -25,11 +26,13 @@ fun Alarm.toEntity(): AlarmEntity = AlarmEntity(
     minute = minute,
     vibrate = vibrate,
     isEnabled = isEnabled,
-    offsetData = smartOffsetData,
     repeatDays = repeatDays,
     snoozeCount = snoozeCount,
     ringtoneData = ringtoneData,
+    timeBombData = timeBombData,
+    offsetData = smartOffsetData,
     snoozeMinutes = snoozeMinutes,
-    ringtoneVolume = ringtoneVolume,
-    timeBombData = timeBombData
+    challengesList = challengesList,
+    ringtoneVolume = ringtoneVolume
+
 )

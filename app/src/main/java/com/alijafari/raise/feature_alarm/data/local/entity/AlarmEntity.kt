@@ -3,9 +3,9 @@ package com.alijafari.raise.feature_alarm.data.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.alijafari.raise.feature_alarm.data.local.converter.Converters
 import com.alijafari.raise.feature_alarm.domain.model.OffsetData
 import com.alijafari.raise.feature_alarm.domain.model.TimeBombData
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeModel
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 
 @Entity(tableName = "alarms")
@@ -49,4 +49,7 @@ data class AlarmEntity(
 
     @ColumnInfo(name = "timeBombData")
     val timeBombData: TimeBombData = TimeBombData(),
+
+    @ColumnInfo(name = "challenges", defaultValue = "")
+    val challengesList: ArrayList<ChallengeModel> = arrayListOf<ChallengeModel>(),
 )

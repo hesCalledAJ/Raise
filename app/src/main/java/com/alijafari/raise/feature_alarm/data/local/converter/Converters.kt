@@ -5,6 +5,8 @@ import androidx.core.net.toUri
 import androidx.room.TypeConverter
 import com.alijafari.raise.feature_alarm.domain.model.OffsetData
 import com.alijafari.raise.feature_alarm.domain.model.TimeBombData
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeModel
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeType
 import com.alijafari.raise.feature_ringtone.domain.model.RingtoneData
 
 class Converters {
@@ -12,7 +14,45 @@ class Converters {
     private companion object {
         const val SEPARATOR_COMPLEX = "@@@&&"
         const val SEPARATOR_SIMPLE = ","
+        const val SEPARATOR_LIST = "|||"
     }
+
+    @TypeConverter
+    fun challengeToString(challenge: ChallengeModel): String {
+        return listOf(
+            challenge.type.name,
+            challenge.difficulty.toString(),
+            challenge.repeats.toString(),
+            challenge.data
+        ).joinToString(SEPARATOR_COMPLEX)
+    }
+
+    @TypeConverter
+    fun stringToChallenge(value: String): ChallengeModel? {
+        if (value.isBlank()) return null
+        val parts = value.split(SEPARATOR_COMPLEX)
+        return try {
+            ChallengeModel(
+                type = ChallengeType.valueOf(parts[0]),
+                difficulty = parts[1].toInt(),
+                repeats = parts[2].toInt(),
+                data = parts.getOrNull(3).orEmpty()
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    @TypeConverter
+    fun challengeListToString(list: ArrayList<ChallengeModel>): String =
+        list.joinToString(SEPARATOR_LIST) { challengeToString(it) }
+
+    @TypeConverter
+    fun stringToChallengeList(value: String): ArrayList<ChallengeModel> {
+        if (value.isBlank()) return arrayListOf()
+        return ArrayList(value.split(SEPARATOR_LIST).mapNotNull { stringToChallenge(it) })
+    }
+
     @TypeConverter
     fun intListToString(list: List<Int>): String =
         list.joinToString(SEPARATOR_SIMPLE)
@@ -65,7 +105,4 @@ class Converters {
             val delay = parts.getOrNull(1)?.toIntOrNull()?.coerceIn(30, 120) ?: 60
             TimeBombData(enabled = enabled, delaySeconds = delay)
         }
-
-    fun offsetDataToStringNonConverter(data: OffsetData): String = offsetDataToString(data)
-    fun timeBombDataToStringNonConverter(data: TimeBombData): String = timeBombDataToString(data)
 }
