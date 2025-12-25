@@ -44,6 +44,8 @@
     <string name="seconds">%d Seconds</string>
     <string name="disabled">Disabled</string>
     <string name="snooze_disabled">Disabled 🗿</string>
+    <string name="challenge_math">Math</string>
+    <string name="challenge_captcha">Captcha</string>
 
     <plurals name="n_minutes">
         <item quantity="one">%d Minute</item>

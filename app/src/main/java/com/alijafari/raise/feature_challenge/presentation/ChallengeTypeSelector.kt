@@ -8,9 +8,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Calculate
-import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,14 +29,15 @@ import com.alijafari.raise.feature_challenge.domain.model.ChallengeType
 @Composable
 fun ChallengeTypeSelector(
     modifier: Modifier = Modifier,
+    onDismiss : ()->Unit,
     onChallengeSelected: (ChallengeType) -> Unit,
 ) {
     val options = listOf(
         ChallengeOption(
-            type = ChallengeType.MEMORY,
-            title = "Memory",
-            subtitle = "Match pairs of tiles",
-            icon = Icons.Default.Memory
+            type = ChallengeType.CAPTCHA,
+            title = "Captcha",
+            subtitle = "Type the displayed text",
+            icon = Icons.Default.Keyboard
         ),
         ChallengeOption(
             type = ChallengeType.MATH,
@@ -45,33 +46,44 @@ fun ChallengeTypeSelector(
             icon = Icons.Default.Calculate
         ),
     )
-    LazyColumn(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                Text(
-                    text = "Select Challenge",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    text = "Choose a task to dismiss this alarm.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+    Column (
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ){
+        Column(modifier = Modifier.padding(bottom = 8.dp).fillMaxWidth() , horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = "Select Challenge",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            Text(
+                text = "Choose a task to dismiss this alarm.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.Gray
+            )
+        }
+        LazyColumn(
+            modifier = modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp)),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
+            items(options) { option ->
+                ChallengeItemRow(
+                    option = option,
+                    onClick = { onChallengeSelected(option.type) }
                 )
             }
         }
-
-        items(options) { option ->
-            ChallengeItemRow(
-                option = option,
-                onClick = { onChallengeSelected(option.type) }
+        Button(
+            onClick = onDismiss,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer
             )
+        ) {
+            Text("Cancel")
         }
     }
 }
@@ -84,21 +96,27 @@ fun ChallengeItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .padding(16.dp),
+            .background(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(5.dp)
+            )
+            .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Icon Container
         Box(
             modifier = Modifier
                 .size(48.dp)
-                .clip(RoundedCornerShape(12.dp)),
+                .background(
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    RoundedCornerShape(10.dp)
+                ),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = option.icon,
                 contentDescription = null,
+                tint =  MaterialTheme.colorScheme.primaryContainer,
                 modifier = Modifier.size(24.dp)
             )
         }
@@ -109,11 +127,13 @@ fun ChallengeItemRow(
             Text(
                 text = option.title,
                 fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
             Text(
                 text = option.subtitle,
-                fontSize = 14.sp
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }

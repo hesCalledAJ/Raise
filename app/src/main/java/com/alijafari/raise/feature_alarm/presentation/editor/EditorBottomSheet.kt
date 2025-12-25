@@ -2,7 +2,11 @@ package com.alijafari.raise.feature_alarm.presentation.editor
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +26,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Keyboard
+import androidx.compose.material.icons.rounded.OpenInFull
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -30,10 +40,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
+import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -53,16 +64,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alijafari.raise.R
 import com.alijafari.raise.core.ui.theme.CardPosition
+import com.alijafari.raise.core.utils.ChallengeUtils
 import com.alijafari.raise.core.utils.WeekdayUtils.formatSelectedDays
 import com.alijafari.raise.core.utils.getRelativeNextRingText
 import com.alijafari.raise.core.utils.makeOffsetSubtitle
@@ -78,8 +88,19 @@ import com.alijafari.raise.feature_alarm.presentation.editor.components.Ringtone
 import com.alijafari.raise.feature_alarm.presentation.editor.components.TimeBombDialog
 import com.alijafari.raise.feature_alarm.presentation.editor.components.TimePickerDialog
 import com.alijafari.raise.feature_alarm.presentation.editor.components.rememberCardSliderState
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeModel
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeType
+import com.alijafari.raise.feature_challenge.presentation.ChallengeConfig
 import com.alijafari.raise.feature_challenge.presentation.ChallengeTypeSelector
 import kotlin.math.roundToInt
+
+sealed class EditorScreen(val order: Int) {
+    object Main : EditorScreen(0)
+    object ChallengeSelector : EditorScreen(1)
+    data class ChallengeEditor(val index: Int, val challenge: ChallengeModel) : EditorScreen(2)
+}
+
+// Replace your boolean with this:
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -88,7 +109,8 @@ fun EditorBottomSheet(
     onPreview: (alarm: Alarm) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var isSelectingChallenges by rememberSaveable { mutableStateOf(false) }
+
+    var currentScreen by remember { mutableStateOf<EditorScreen>(EditorScreen.Main) }
 
     val editingAlarmState by viewModel.editingAlarm.collectAsStateWithLifecycle()
     val editingAlarm = editingAlarmState ?: return viewModel.hideEditor().also { onDismiss() }
@@ -216,43 +238,56 @@ fun EditorBottomSheet(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
+        modifier = Modifier.padding(top = 36.dp),
         onDismissRequest = onDismiss,
         sheetState = sheetState
     ) {
-        AnimatedContent(isSelectingChallenges) { it->
-            if (it){
-                ChallengeTypeSelector {
-                    isSelectingChallenges = false
+        Box(
+            Modifier.padding(horizontal = 14.dp)
+        ) {
+            AnimatedContent(
+                targetState = currentScreen,
+                label = "EditorNav",
+                transitionSpec = {
+                    if (targetState.order > initialState.order) {
+                        (slideInHorizontally { width -> width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> -width } + fadeOut()
+                        )
+                    } else {
+                        (slideInHorizontally { width -> -width } + fadeIn()).togetherWith(
+                            slideOutHorizontally { width -> width } + fadeOut()
+                        )
+                    }
                 }
-            } else
-            {
-                Column(
-                    modifier = Modifier.padding(10.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            TimeText(
-                                modifier = Modifier.clickable(
-                                    true
-                                ) {
-                                    isTimePickerVisible = true
-                                }, editingAlarm
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = LocalContext.current.getRelativeNextRingText(
-                                    editingAlarm.getNextActualTriggerAtMillis()
-                                ),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+            ) { screen ->
+                when (screen) {
+                    is EditorScreen.Main -> {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    TimeText(
+                                        modifier = Modifier.clickable(
+                                            true
+                                        ) {
+                                            isTimePickerVisible = true
+                                        }, editingAlarm
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = LocalContext.current.getRelativeNextRingText(
+                                            editingAlarm.getNextActualTriggerAtMillis()
+                                        ),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
 
 //                val icButtonAngle = animateFloatAsState(
 //                    targetValue = if (isTimeBombDialogVisible) 90f else 0f,
@@ -262,386 +297,468 @@ fun EditorBottomSheet(
 //                    ),
 //                    label = "bounceScale"
 //                ).value
-                        IconButton(
-                            modifier = Modifier
-                                .size(50.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.primaryContainer,
-                                    shape = MaterialShapes.Pill.toShape()
-                                ),
-                            onClick = {
-                                isTimePickerVisible = true
-                            }) {
-                            Icon(
-                                painterResource(R.drawable.ic_pen),
-                                null,
-                                Modifier.padding(5.dp),
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                    Box(
-                        Modifier
-                            .padding(vertical = 9.dp)
-                            .weight(1f, fill = false)
-                            .clip(RoundedCornerShape(15.dp))
-                    ) {
-                        Column(
-                            Modifier
-                                .verticalScroll(rememberScrollState())
-                        )
-                        {
-                            EditorCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    isTitleDialogVisible = true
-                                },
-                                icon = painterResource(R.drawable.ic_label),
-                                title = "Title",
-                                position = if (isTitleDialogVisible) CardPosition.ONLY else CardPosition.FIRST
-                            ) {
-                                Text(text = editingAlarm.label)
-                            }
-                            EditorCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    isRepeatDialogVisible = true
-                                },
-                                icon = painterResource(R.drawable.ic_repeat),
-                                title = "Repeat Days",
-                                position = if (isRepeatDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE
-                            ) {
-                                Text(text = formatSelectedDays(editingAlarm.repeatDays))
-                            }
-                            EditorCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    isSnoozePickerVisible = true
-                                },
-                                icon = painterResource(R.drawable.ic_snooze),
-                                title = "Snooze",
-                                position = if (isSnoozePickerVisible) CardPosition.ONLY else CardPosition.LAST
-                            ) {
-                                Text(
-                                    text = if (editingAlarm.snoozeMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
-                                        R.string.n_minutes,
-                                        editingAlarm.snoozeMinutes
+                                IconButton(
+                                    modifier = Modifier
+                                        .size(50.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = MaterialShapes.Pill.toShape()
+                                        ),
+                                    onClick = {
+                                        isTimePickerVisible = true
+                                    }) {
+                                    Icon(
+                                        painterResource(R.drawable.ic_pen),
+                                        null,
+                                        Modifier.padding(5.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
-                                )
+                                }
                             }
-                            Spacer(Modifier.height(4.dp))
-                            EditorCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    isRingtoneDialogVisible = true
-                                },
-                                icon = painterResource(if (editingAlarm.ringtoneVolume == 0f) R.drawable.ic_speaker_disabled else if (editingAlarm.ringtoneVolume <= 0.4f) R.drawable.ic_speaker_low else R.drawable.ic_speaker_loud),
-                                title = "Ringtone",
-                                sliderState = if (editingAlarm.ringtoneData?.uri == null) null else rememberCardSliderState(
-                                    value = editingAlarm.ringtoneVolume,
-                                    onDragStateChange = { isDragging ->
-                                        if (isDragging) {
-                                            editingAlarm.ringtoneData.let {
-                                                viewModel.ringtonePreviewPlayer.stop()
-                                                viewModel.ringtonePreviewPlayer.play(
-                                                    it,
-                                                    editingAlarm.ringtoneVolume
-                                                )
-                                            }
-                                        }
+                            Box(
+                                Modifier
+                                    .padding(vertical = 9.dp)
+                                    .weight(1f, fill = false)
+                                    .clip(RoundedCornerShape(15.dp))
+                            ) {
+                                Column(
+                                    Modifier
+                                        .verticalScroll(rememberScrollState())
+                                )
+                                {
+                                    EditorCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            isTitleDialogVisible = true
+                                        },
+                                        icon = painterResource(R.drawable.ic_label),
+                                        title = "Title",
+                                        position = if (isTitleDialogVisible) CardPosition.ONLY else CardPosition.FIRST
+                                    ) {
+                                        Text(text = editingAlarm.label)
                                     }
-                                ) {
-                                    viewModel.setEditingAlarmEdit(
-                                        editingAlarm.copy(
-                                            ringtoneVolume = it,
-                                            hour = timePickerState.hour,
-                                            minute = timePickerState.minute
+                                    EditorCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            isRepeatDialogVisible = true
+                                        },
+                                        icon = painterResource(R.drawable.ic_repeat),
+                                        title = "Repeat Days",
+                                        position = if (isRepeatDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE
+                                    ) {
+                                        Text(text = formatSelectedDays(editingAlarm.repeatDays))
+                                    }
+                                    EditorCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            isSnoozePickerVisible = true
+                                        },
+                                        icon = painterResource(R.drawable.ic_snooze),
+                                        title = "Snooze",
+                                        position = if (isSnoozePickerVisible) CardPosition.ONLY else CardPosition.LAST
+                                    ) {
+                                        Text(
+                                            text = if (editingAlarm.snoozeMinutes == 0) stringResource(R.string.snooze_disabled) else stringResource(
+                                                R.string.n_minutes,
+                                                editingAlarm.snoozeMinutes
+                                            )
                                         )
-                                        //TODO hotfix for the time reset bug . solve later , this is the bad verson below :
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    EditorCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            isRingtoneDialogVisible = true
+                                        },
+                                        icon = painterResource(if (editingAlarm.ringtoneVolume == 0f) R.drawable.ic_speaker_disabled else if (editingAlarm.ringtoneVolume <= 0.4f) R.drawable.ic_speaker_low else R.drawable.ic_speaker_loud),
+                                        title = "Ringtone",
+                                        sliderState = if (editingAlarm.ringtoneData?.uri == null) null else rememberCardSliderState(
+                                            value = editingAlarm.ringtoneVolume,
+                                            onDragStateChange = { isDragging ->
+                                                if (isDragging) {
+                                                    editingAlarm.ringtoneData.let {
+                                                        viewModel.ringtonePreviewPlayer.stop()
+                                                        viewModel.ringtonePreviewPlayer.play(
+                                                            it,
+                                                            editingAlarm.ringtoneVolume
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        ) {
+                                            viewModel.setEditingAlarmEdit(
+                                                editingAlarm.copy(
+                                                    ringtoneVolume = it,
+                                                    hour = timePickerState.hour,
+                                                    minute = timePickerState.minute
+                                                )
+                                                //TODO hotfix for the time reset bug . solve later , this is the bad verson below :
 
 //                                    editingAlarm.copy(
 //                                        ringtoneVolume = it,
 //                                        hour = timePickerState.hour,
 //                                       minute = timePickerState.minute)
-                                    )
-                                },
-                                position = if (isRingtoneDialogVisible) CardPosition.ONLY else CardPosition.FIRST
-                            ) {
-                                if (editingAlarm.ringtoneData != null && editingAlarm.ringtoneVolume != 0f) {
-                                    Text(text = editingAlarm.ringtoneData.name ?: "Unknown")
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(text = "${(editingAlarm.ringtoneVolume * 100f).roundToInt()}%")
-                                } else Text(text = stringResource(R.string.silent))
-                            }
-                            EditorCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    isRepeatDialogVisible = true
-                                },
-                                icon = painterResource(R.drawable.ic_vibrate),
-                                title = stringResource(R.string.editor_vibrate_title),
-                                position = CardPosition.LAST
-                            ) {
-                                Switch(
-                                    modifier = Modifier.height(24.dp),
-                                    checked = editingAlarm.vibrate,
-                                    onCheckedChange = {
-                                        viewModel.setEditingAlarmEdit(
-                                            editingAlarm.copy(
-                                                vibrate = it
                                             )
-                                        )
-                                    })
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            EditorCard(
-                                modifier = Modifier.fillMaxWidth(),
-                                icon = painterResource(R.drawable.ic_challenge),
-                                title = "Challenges",
-                                position = CardPosition.ONLY,
-                                onClick = {  },
-                                bigContent = {
-                                    LazyRow(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
+                                        },
+                                        position = if (isRingtoneDialogVisible) CardPosition.ONLY else CardPosition.FIRST
                                     ) {
-                                        item {
-                                            ChallengeActionChip(
-                                                label = "Add",
-                                                icon = Icons.Default.Add,
-                                                isBordered = true,
-                                                onClick = { isSelectingChallenges = true }
-                                            )
-                                        }
-
-                                        items(editingAlarm.challengesList) { challenge ->
-                                            ChallengeActionChip(
-                                                label = "${challenge.type.name.lowercase().replaceFirstChar { it.uppercase() }} - ${challenge.difficulty}",
-                                                onClick = {
-                                                    // logic to edit this specific challenge
-                                                }
-                                            )
-                                        }
+                                        if (editingAlarm.ringtoneData != null && editingAlarm.ringtoneVolume != 0f) {
+                                            Text(text = editingAlarm.ringtoneData.name ?: "Unknown")
+                                            Spacer(modifier = Modifier.width(5.dp))
+                                            Text(text = "${(editingAlarm.ringtoneVolume * 100f).roundToInt()}%")
+                                        } else Text(text = stringResource(R.string.silent))
                                     }
-                                }
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.ic_challenge),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Spacer(Modifier.height(4.dp))
-                            Box {
-                                this@Column.AnimatedVisibility(isExpanded.not()) {
-                                    Box(Modifier.fillMaxWidth()) {
+                                    EditorCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        onClick = {
+                                            isRepeatDialogVisible = true
+                                        },
+                                        icon = painterResource(R.drawable.ic_vibrate),
+                                        title = stringResource(R.string.editor_vibrate_title),
+                                        position = CardPosition.LAST
+                                    ) {
+                                        Switch(
+                                            modifier = Modifier.height(24.dp),
+                                            checked = editingAlarm.vibrate,
+                                            onCheckedChange = {
+                                                viewModel.setEditingAlarmEdit(
+                                                    editingAlarm.copy(
+                                                        vibrate = it
+                                                    )
+                                                )
+                                            })
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    EditorCard(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        icon = painterResource(R.drawable.ic_challenge),
+                                        title = "Challenges",
+                                        position = CardPosition.ONLY,
+                                        onClick = {  },
+                                        bigContent = {
+                                            LazyRow(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                item {
+                                                    AddChallengeChip {
+                                                        currentScreen = EditorScreen.ChallengeSelector
+                                                    }
+                                                }
+
+                                                items(editingAlarm.challengesList) { challenge ->
+                                                    ChallengeActionChip(
+                                                        challenge = challenge,
+                                                        onDelete = {
+                                                            viewModel.setEditingAlarmEdit(
+                                                                editingAlarm.copy(
+                                                                    challengesList = ArrayList(editingAlarm.challengesList.minus(challenge))
+                                                                )
+                                                            )
+                                                        }
+                                                    ){
+                                                        currentScreen = EditorScreen.ChallengeEditor(
+                                                            editingAlarm.challengesList.indexOf(it),
+                                                            it
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.ic_tuning),
+                                            contentDescription = null,
+                                            modifier = Modifier.size(24.dp),
+                                            tint = MaterialTheme.colorScheme.primary
+
+                                        )
+                                    }
+                                    Spacer(Modifier.height(4.dp))
+                                    Box {
+                                        this@Column.AnimatedVisibility(isExpanded.not()) {
+                                            Box(Modifier.fillMaxWidth()) {
+                                                EditorCard(
+                                                    modifier = Modifier
+                                                        .padding(bottom = 4.dp)
+                                                        .fillMaxWidth(.94f)
+                                                        .offset(y = 7.dp)
+                                                        .zIndex(-1f)
+                                                        .align(Alignment.Center)
+                                                        .alpha(.7f),
+                                                    onClick = {},
+                                                    icon = null,
+                                                    title = "",
+                                                    position = CardPosition.ONLY
+                                                ) {}
+                                            }
+                                        }
                                         EditorCard(
                                             modifier = Modifier
-                                                .padding(bottom = 4.dp)
-                                                .fillMaxWidth(.94f)
-                                                .offset(y = 7.dp)
-                                                .zIndex(-1f)
-                                                .align(Alignment.Center)
-                                                .alpha(.7f),
-                                            onClick = {},
-                                            icon = null,
-                                            title = "",
-                                            position = CardPosition.ONLY
-                                        ) {}
-                                    }
-                                }
-                                EditorCard(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .zIndex(2f),
-                                    onClick = {
-                                        isExpanded = isExpanded.not()
-                                    },
-                                    icon = painterResource(R.drawable.ic_plus),
-                                    title = stringResource(R.string.editor_more_title),
-                                    position = if (isExpanded) CardPosition.FIRST else CardPosition.ONLY,
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (isExpanded) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                                        contentColor = if (isExpanded) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                ) {
-                                    if (isExpanded.not()) {
-                                        Row {
-                                            Icon(
-                                                modifier = Modifier.size(20.dp),
-                                                painter = painterResource(R.drawable.ic_challenge),
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary
+                                                .fillMaxWidth()
+                                                .zIndex(2f),
+                                            onClick = {
+                                                isExpanded = isExpanded.not()
+                                            },
+                                            icon = painterResource(R.drawable.ic_plus),
+                                            title = stringResource(R.string.editor_more_title),
+                                            position = if (isExpanded) CardPosition.FIRST else CardPosition.ONLY,
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = if (isExpanded) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                                contentColor = if (isExpanded) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                                             )
-                                            Icon(
-                                                modifier = Modifier.size(20.dp),
-                                                painter = painterResource(R.drawable.ic_timer),
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary
-                                            )
-                                            Icon(
-                                                modifier = Modifier.size(20.dp),
-                                                painter = painterResource(R.drawable.ic_bomb),
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary
+                                        ) {
+                                            if (isExpanded.not()) {
+                                                Row {
+                                                    Icon(
+                                                        modifier = Modifier.size(20.dp),
+                                                        painter = painterResource(R.drawable.ic_challenge),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Icon(
+                                                        modifier = Modifier.size(20.dp),
+                                                        painter = painterResource(R.drawable.ic_timer),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                    Icon(
+                                                        modifier = Modifier.size(20.dp),
+                                                        painter = painterResource(R.drawable.ic_bomb),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                            } else Text(
+                                                stringResource(R.string.editor_hide_more)
                                             )
                                         }
-                                    } else Text(
-                                        stringResource(R.string.editor_hide_more)
-                                    )
+                                    }
+                                    AnimatedVisibility(isExpanded) {
+                                        Column {
+                                            val context = LocalContext.current
+                                            EditorCard(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .zIndex(2f),
+                                                icon = painterResource(R.drawable.ic_timer),
+                                                title = stringResource(R.string.editor_offset_title),
+                                                subTitle = editingAlarm.makeOffsetSubtitle(context),
+                                                position = if (isOffsetDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE,
+                                                onClick = {
+                                                    isOffsetDialogVisible = true
+                                                }
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    VerticalDivider(
+                                                        Modifier.height(22.dp),
+                                                        2.dp,
+                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Switch(
+                                                        modifier = Modifier.height(24.dp),
+                                                        checked = editingAlarm.smartOffsetData.enabled,
+                                                        onCheckedChange = {
+                                                            viewModel.setEditingAlarmEdit(
+                                                                editingAlarm.copy(
+                                                                    smartOffsetData = editingAlarm.smartOffsetData.copy(
+                                                                        enabled = it
+                                                                    )
+                                                                )
+                                                            )
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                            EditorCard(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .zIndex(2f),
+                                                icon = painterResource(R.drawable.ic_bomb),
+                                                title = stringResource(R.string.editor_loud_title),
+                                                subTitle = stringResource(
+                                                    R.string.editor_loud_bomb_delay_description,
+                                                    editingAlarm.timeBombData.delaySeconds
+                                                ),
+                                                position = if (isTimeBombDialogVisible) CardPosition.ONLY else CardPosition.LAST,
+                                                onClick = {
+                                                    isTimeBombDialogVisible = true
+                                                }
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    VerticalDivider(
+                                                        Modifier.height(22.dp),
+                                                        2.dp,
+                                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                                    )
+                                                    Switch(
+                                                        modifier = Modifier.height(24.dp),
+                                                        checked = editingAlarm.timeBombData.enabled,
+                                                        onCheckedChange = {
+                                                            viewModel.setEditingAlarmEdit(
+                                                                editingAlarm.copy(
+                                                                    timeBombData = editingAlarm.timeBombData.copy(
+                                                                        enabled = it
+                                                                    )
+                                                                )
+                                                            )
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
-                            AnimatedVisibility(isExpanded) {
-                                Column {
-                                    val context = LocalContext.current
-                                    EditorCard(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .zIndex(2f),
-                                        icon = painterResource(R.drawable.ic_timer),
-                                        title = stringResource(R.string.editor_offset_title),
-                                        subTitle = editingAlarm.makeOffsetSubtitle(context),
-                                        position = if (isOffsetDialogVisible) CardPosition.ONLY else CardPosition.MIDDLE,
-                                        onClick = {
-                                            isOffsetDialogVisible = true
-                                        }
-                                    ) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(9.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            VerticalDivider(
-                                                Modifier.height(22.dp),
-                                                2.dp,
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Switch(
-                                                modifier = Modifier.height(24.dp),
-                                                checked = editingAlarm.smartOffsetData.enabled,
-                                                onCheckedChange = {
-                                                    viewModel.setEditingAlarmEdit(
-                                                        editingAlarm.copy(
-                                                            smartOffsetData = editingAlarm.smartOffsetData.copy(
-                                                                enabled = it
-                                                            )
-                                                        )
-                                                    )
-                                                }
-                                            )
-                                        }
-                                    }
-                                    EditorCard(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .zIndex(2f),
-                                        icon = painterResource(R.drawable.ic_bomb),
-                                        title = stringResource(R.string.editor_loud_title),
-                                        subTitle = stringResource(
-                                            R.string.editor_loud_bomb_delay_description,
-                                            editingAlarm.timeBombData.delaySeconds
-                                        ),
-                                        position = if (isTimeBombDialogVisible) CardPosition.ONLY else CardPosition.LAST,
-                                        onClick = {
-                                            isTimeBombDialogVisible = true
-                                        }
-                                    ) {
-                                        Row(
-                                            horizontalArrangement = Arrangement.spacedBy(9.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            VerticalDivider(
-                                                Modifier.height(22.dp),
-                                                2.dp,
-                                                MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                            Switch(
-                                                modifier = Modifier.height(24.dp),
-                                                checked = editingAlarm.timeBombData.enabled,
-                                                onCheckedChange = {
-                                                    viewModel.setEditingAlarmEdit(
-                                                        editingAlarm.copy(
-                                                            timeBombData = editingAlarm.timeBombData.copy(
-                                                                enabled = it
-                                                            )
-                                                        )
-                                                    )
-                                                }
-                                            )
-                                        }
-                                    }
+                            Row {
+                                Button(
+                                    onClick = {
+                                        if (isUpdating) viewModel.deleteAlarm(editingAlarm)
+                                        else onDismiss()
+                                    }, colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                ) {
+                                    Text(if (isUpdating) "Delete" else "Cancel")
                                 }
+
+                                Spacer(Modifier.weight(1f))
+                                Button(
+                                    onClick = {
+                                        onPreview(editingAlarm)
+                                    }, colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                    ), shape = RoundedCornerShape(
+                                        topStart = 100f, topEnd = 10f, bottomEnd = 10f, bottomStart = 100f
+                                    )
+                                ) {
+                                    Text("Preview")
+                                }
+                                Spacer(Modifier.width(3.dp))
+                                Button(
+                                    onClick = { viewModel.saveEditingAlarm() }, shape = RoundedCornerShape(
+                                        topStart = 10f, topEnd = 100f, bottomEnd = 100f, bottomStart = 10f
+                                    )
+                                ) { Text("Save") }
+                                Spacer(Modifier.width(5.dp))
                             }
                         }
                     }
-                    Row {
-                        Button(
-                            onClick = {
-                                if (isUpdating) viewModel.deleteAlarm(editingAlarm)
-                                else onDismiss()
-                            }, colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        ) {
-                            Text(if (isUpdating) "Delete" else "Cancel")
-                        }
 
-                        Spacer(Modifier.weight(1f))
-                        Button(
-                            onClick = {
-                                onPreview(editingAlarm)
-                            }, colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                            ), shape = RoundedCornerShape(
-                                topStart = 100f, topEnd = 10f, bottomEnd = 10f, bottomStart = 100f
-                            )
+                    is EditorScreen.ChallengeSelector -> {
+                        ChallengeTypeSelector(
+                            onDismiss = { currentScreen = EditorScreen.Main }
                         ) {
-                            Text("Preview")
+                            currentScreen = EditorScreen.ChallengeEditor(-1, ChallengeModel(type = it))
                         }
-                        Spacer(Modifier.width(3.dp))
-                        Button(
-                            onClick = { viewModel.saveEditingAlarm() }, shape = RoundedCornerShape(
-                                topStart = 10f, topEnd = 100f, bottomEnd = 100f, bottomStart = 10f
-                            )
-                        ) { Text("Save") }
-                        Spacer(Modifier.width(5.dp))
+                    }
+
+                    is EditorScreen.ChallengeEditor -> {
+                        ChallengeConfig(
+                            challenge = screen.challenge,
+                            onDismiss = { currentScreen = EditorScreen.ChallengeSelector },
+                            onSave = { updatedChallenge ->
+                                val newList = ArrayList(editingAlarm.challengesList)
+                                if (screen.index == -1) {
+                                    newList.add(updatedChallenge)
+                                } else {
+                                    newList[screen.index] = updatedChallenge
+                                }
+
+                                viewModel.setEditingAlarmEdit(editingAlarm.copy(challengesList = newList))
+                                currentScreen = EditorScreen.Main
+                            }
+                        )
                     }
                 }
             }
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChallengeActionChip(
-    label: String,
-    icon: ImageVector? = null,
-    isBordered: Boolean = false,
+    challenge: ChallengeModel,
+    onDelete: () -> Unit,
+    onClick: (ChallengeModel) -> Unit
+) {
+
+    InputChip(
+        selected = false,
+        onClick = { onClick(challenge) },
+        label = {
+            Text(
+                text = "${stringResource(ChallengeUtils.nameStringResource(challenge.type))} • ${ChallengeUtils.difficultyLevel(challenge.difficulty)}" + if (challenge.repeats!=0) " • ×${challenge.repeats}" else "",
+                style = MaterialTheme.typography.labelLarge
+            )
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = when (challenge.type) {
+                    ChallengeType.MATH -> Icons.Rounded.Calculate
+                    ChallengeType.CAPTCHA -> Icons.Rounded.Keyboard
+                },
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        trailingIcon = {
+            Icon(
+                imageVector = Icons.Rounded.Close,
+                contentDescription = "Remove",
+                modifier = Modifier
+                    .size(18.dp)
+                    .clickable { onDelete() },
+                tint = MaterialTheme.colorScheme.onPrimary
+            )
+        },
+        shape = RoundedCornerShape(12.dp),
+        colors = InputChipDefaults.inputChipColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            labelColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+        border = null
+    )
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddChallengeChip(
     onClick: () -> Unit
 ) {
-    Surface(
+    AssistChip(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (isBordered) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-        border = if (isBordered) BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)) else null
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            if (icon != null) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-            }
+        label = {
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium
+                text = "Add",
+                style = MaterialTheme.typography.labelLarge
             )
-        }
-    }
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = Icons.Rounded.Add,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+        },
+        shape = RoundedCornerShape(12.dp),
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = Color.Transparent,
+            labelColor = MaterialTheme.colorScheme.primary,
+            leadingIconContentColor = MaterialTheme.colorScheme.primary
+        ),
+        border = AssistChipDefaults.assistChipBorder(
+            enabled = true,
+            borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        )
+    )
 }
