@@ -159,7 +159,6 @@ fun EditorCard(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
                             .clickable(
                                 enabled = onBigContentClicked != null,
                                 onClick = onBigContentClicked ?: {},

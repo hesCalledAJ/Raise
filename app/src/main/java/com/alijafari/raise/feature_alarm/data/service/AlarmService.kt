@@ -197,7 +197,8 @@ class AlarmService : Service() {
 
     var alarmId: Int = -1
 
-    var actualTriggerMillis : Long = 0 // is used for in calculation of next trigger time correctly when smart offset has been used
+    var actualTriggerMillis : Long = 0 // is used for in calculating next trjgger time correctly when smart offset has been used
+
 
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -322,10 +323,10 @@ class AlarmService : Service() {
     }
 
     @SuppressLint("ScheduleExactAlarm")
-    fun handleSkipSnooze() {
+    fun handleSkipSnooze(intent : Intent? = null) {
         logStep("handleSkipSnooze")
         useCases.cancelSnooze(alarm)
-        handleDismiss()
+        state.ring()
     }
 
     private fun prepareChallenges() {
@@ -338,14 +339,13 @@ class AlarmService : Service() {
                     ActiveChallenge(
                         type = challenge.type,
                         question = question,
-                        answer = answer.toString(),
+                        answer = answer,
                         config = challenge
                     )
                 )
             }
         }
         state.setActiveChallenges(generated)
-        Log.e("TAG", "prepareChallenges: ${state.activeChallenges.value.size}", )
     }
     private fun updateNotification(hideHeadsUp: Boolean = false) {
         startForeground(

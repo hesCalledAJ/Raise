@@ -6,7 +6,7 @@ object CaptchaProvider : ChallengeProvider {
     private val charPool = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
     private val complexPool = charPool + "!@#$%^&*()_+-=[]{}|;:,.<>?"
 
-    override fun generate(difficulty: Int): Pair<String,Int> {
+    override fun generate(difficulty: Int): Pair<String, String> {
         val length = when (difficulty) {
             0 -> 4
             1 -> 6
@@ -15,8 +15,9 @@ object CaptchaProvider : ChallengeProvider {
             else -> 12
         }
         val pool = if (difficulty > 2) complexPool else charPool
-        return (1..length)
+        val captcha = (1..length)
             .map { pool.random() }
-            .joinToString("") to 0
+            .joinToString("")
+        return captcha to captcha
     }
 }

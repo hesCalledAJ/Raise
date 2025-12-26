@@ -2,6 +2,7 @@ package com.alijafari.raise.feature_alarm.presentation.editor
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
@@ -244,7 +245,8 @@ fun EditorBottomSheet(
     ) {
         Box(
             Modifier.padding(horizontal = 14.dp)
-        ) {
+        )
+        {
             AnimatedContent(
                 targetState = currentScreen,
                 label = "EditorNav",
@@ -430,50 +432,48 @@ fun EditorBottomSheet(
                                     }
                                     Spacer(Modifier.height(4.dp))
                                     EditorCard(
-                                        modifier = Modifier.fillMaxWidth(),
+                                        modifier = Modifier.fillMaxWidth().animateContentSize(),
                                         icon = painterResource(R.drawable.ic_challenge),
                                         title = "Challenges",
                                         position = CardPosition.ONLY,
                                         onClick = {  },
                                         bigContent = {
-                                            LazyRow(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                item {
-                                                    AddChallengeChip {
-                                                        currentScreen = EditorScreen.ChallengeSelector
+                                            if (editingAlarm.challengesList.isEmpty()) null else {
+                                                LazyRow(
+                                                    modifier = Modifier.fillMaxWidth().padding(bottom = 5.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    item{
+                                                        Spacer(Modifier.width(45.dp))
                                                     }
-                                                }
-
-                                                items(editingAlarm.challengesList) { challenge ->
-                                                    ChallengeActionChip(
-                                                        challenge = challenge,
-                                                        onDelete = {
-                                                            viewModel.setEditingAlarmEdit(
-                                                                editingAlarm.copy(
-                                                                    challengesList = ArrayList(editingAlarm.challengesList.minus(challenge))
+                                                    items(editingAlarm.challengesList) { challenge ->
+                                                        ChallengeActionChip(
+                                                            challenge = challenge,
+                                                            onDelete = {
+                                                                viewModel.setEditingAlarmEdit(
+                                                                    editingAlarm.copy(
+                                                                        challengesList = ArrayList(editingAlarm.challengesList.minus(challenge))
+                                                                    )
                                                                 )
+                                                            }
+                                                        ){
+                                                            currentScreen = EditorScreen.ChallengeEditor(
+                                                                editingAlarm.challengesList.indexOf(it),
+                                                                it
                                                             )
                                                         }
-                                                    ){
-                                                        currentScreen = EditorScreen.ChallengeEditor(
-                                                            editingAlarm.challengesList.indexOf(it),
-                                                            it
-                                                        )
+                                                    }
+                                                    item{
+                                                        Spacer(Modifier.width(5.dp))
                                                     }
                                                 }
                                             }
                                         }
                                     ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.ic_tuning),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(24.dp),
-                                            tint = MaterialTheme.colorScheme.primary
-
-                                        )
+                                        AddChallengeChip {
+                                            currentScreen = EditorScreen.ChallengeSelector
+                                        }
                                     }
                                     Spacer(Modifier.height(4.dp))
                                     Box {

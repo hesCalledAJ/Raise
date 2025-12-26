@@ -55,12 +55,12 @@ fun ChallengeTypeSelector(
                 text = "Select Challenge",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Choose a task to dismiss this alarm.",
+                text = "Choose a task to dismiss this alarm",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         LazyColumn(

@@ -1,6 +1,5 @@
 package com.alijafari.raise.feature_alarm.presentation.ring
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -11,11 +10,8 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetDefaults.DragHandle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -26,7 +22,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -157,7 +152,10 @@ class RingScreenState(
 
     private suspend fun dismissRequested() {
         delay(DISMISS_DELAY_MS)
-        if (isSnoozed) onSkipSnooze()
+        if (isSnoozed) {
+            isSnoozed = false
+            onSkipSnooze()
+        }
         else onDismiss()
     }
 
@@ -226,7 +224,7 @@ fun RingScreen(
     onDismiss: () -> Unit,
     onSkipSnooze: () -> Unit,
     onInteractionStarted: () -> Unit,
-    viewModel : RingViewModel,
+    viewModel: RingViewModel,
     onSnooze: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -305,19 +303,18 @@ fun RingScreen(
                 state = state,
                 onDragDown = state::bottomSheetDragDown,
                 onRelease = state::bottomSheetRelease
-            ){
-                Log.e("TAG", "ChallengeSolvingSheet: $activeChallenges", )
-                Log.e("TAG", "ChallengeSolvingSheet: $currentChallenge", )
+            ) {
                 if (currentChallenge != null) {
-                    ChallengeSolvingSheet (
+                    ChallengeSolvingSheet(
                         challenge = currentChallenge,
                         onInputEntered = { answer ->
                             val isCorrect = viewModel.verifyAnswer(answer)
                             if (!isCorrect) {
-                                // error
+                                // error? idk
                             } else {
-                                // confetti or something
+                                viewModel.verifyAnswer(answer)
                             }
+                            return@ChallengeSolvingSheet isCorrect
                         }
                     )
                 }
