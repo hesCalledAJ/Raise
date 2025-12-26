@@ -1,6 +1,5 @@
 package com.alijafari.raise.feature_alarm.presentation.ring.components
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +32,7 @@ fun DismissBottomSheet(
     state: RingScreenState,
     onDragDown: (Float) -> Unit,
     onRelease: () -> Unit,
+    challengeScreen: (@Composable () -> Unit)? = null,
 ) {
     val effectiveSheetFraction by state.effectiveSheetFraction
     val scrimModifier =
@@ -72,14 +72,21 @@ fun DismissBottomSheet(
                         )
                     )
                     Spacer(Modifier.height(7.dp))
-                    Text(
-                        text = if (state.screenState.value == RingDragState.DRAGGING_UP_DONE) {
-                            if (!state.isDragging) "Alarm Dismissed"
-                            else "Release to dismiss"
-                        } else "Drag up to dismiss",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    if (
+                        state.screenState.value == RingDragState.DRAGGING_UP_DONE && !state.isDragging && challengeScreen != null
+                    ){
+                        challengeScreen.invoke()
+                    } else {
+                        Text(
+                            text = if (state.screenState.value == RingDragState.DRAGGING_UP_DONE) {
+                                if (!state.isDragging) "Alarm Dismissed"
+                                else "Release to dismiss"
+                            } else "Drag up to dismiss",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
                 }
             }
         }

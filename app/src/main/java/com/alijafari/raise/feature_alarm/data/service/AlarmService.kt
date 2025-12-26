@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import com.alijafari.raise.feature_alarm.data.AlarmBroadcastEvent
 import com.alijafari.raise.feature_alarm.data.AlarmIntentExtra
 import com.alijafari.raise.feature_alarm.data.service.NotificationHelper.getAlarmNotification
@@ -14,6 +15,9 @@ import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.domain.usecases.AlarmUseCases
 import com.alijafari.raise.feature_alarm.presentation.ring.ACTION_FINISH_RING_ACTIVITY
 import com.alijafari.raise.feature_alarm.presentation.ring.RingActivity
+import com.alijafari.raise.feature_challenge.data.model.ChallengeFactory
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeModel
+import com.alijafari.raise.feature_challenge.domain.model.ChallengeType
 import com.alijafari.raise.feature_logs.domain.model.EventLog
 import com.alijafari.raise.feature_logs.domain.repository.LogRepository
 import com.alijafari.raise.feature_ringtone.domain.infrastructure.RingtonePlayer
@@ -29,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 sealed interface AlarmStatus {
     object Ringing : AlarmStatus
@@ -49,6 +54,31 @@ class AlarmState(
 ) {
     private val _status = MutableStateFlow<AlarmStatus>(AlarmStatus.Ringing)
     val status: StateFlow<AlarmStatus> = _status.asStateFlow()
+
+    private val _activeChallenges = MutableStateFlow<List<ActiveChallenge>>(emptyList())
+    val activeChallenges = _activeChallenges.asStateFlow()
+
+
+    fun verifyChallenge(input: String): Boolean {
+        val current = activeChallenges.value.firstOrNull() ?: return true
+
+        val isValid = current.answer.trim().equals(input.trim(), ignoreCase = true)
+
+        if (isValid) {
+            setActiveChallenges(activeChallenges.value.drop(1))
+
+            if (activeChallenges.value.isEmpty()) {
+                //
+            }
+        }
+        return isValid
+    }
+    fun hasBlockingChallenges(): Boolean {
+        return activeChallenges.value.isNotEmpty()
+    }
+    fun setActiveChallenges(challenges: List<ActiveChallenge>){
+        _activeChallenges.value = challenges
+    }
 
     private var countdownJob: Job? = null
 
@@ -224,6 +254,7 @@ class AlarmService : Service() {
     private fun handleRing(intent: Intent?) {
         scope.launch {
             initializeAlarm(intent)
+            prepareChallenges()
             state.ring()
             startActivity(
                 Intent(
@@ -297,6 +328,25 @@ class AlarmService : Service() {
         handleDismiss()
     }
 
+    private fun prepareChallenges() {
+        val generated = mutableListOf<ActiveChallenge>()
+
+        alarm.challengesList.forEach { challenge ->
+            repeat(challenge.repeats) {
+                val (question, answer) = ChallengeFactory.generateChallengeData(challenge.type, challenge.difficulty)
+                generated.add(
+                    ActiveChallenge(
+                        type = challenge.type,
+                        question = question,
+                        answer = answer.toString(),
+                        config = challenge
+                    )
+                )
+            }
+        }
+        state.setActiveChallenges(generated)
+        Log.e("TAG", "prepareChallenges: ${state.activeChallenges.value.size}", )
+    }
     private fun updateNotification(hideHeadsUp: Boolean = false) {
         startForeground(
             alarmId,
@@ -345,3 +395,11 @@ class AlarmService : Service() {
         )
     }
 }
+
+data class ActiveChallenge(
+    val id: String = UUID.randomUUID().toString(),
+    val type: ChallengeType,
+    val question: String,
+    val answer: String,
+    val config: ChallengeModel
+)

@@ -17,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -26,13 +25,9 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
-import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -42,13 +37,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.alijafari.raise.core.utils.ChallengeUtils
 import com.alijafari.raise.feature_challenge.data.model.ChallengeFactory
 import com.alijafari.raise.feature_challenge.domain.model.ChallengeModel
@@ -64,7 +54,7 @@ fun ChallengeConfig(
     var repeatCount by remember { mutableFloatStateOf(challenge.repeats.coerceIn(1, 5).toFloat()) }
     var previewData by remember {
         mutableStateOf(
-             ChallengeFactory.generateData(challenge.type, difficultyIndex).first
+             ChallengeFactory.generateChallengeData(challenge.type, difficultyIndex).first
         )
     }
     val difficultyOptions = (1..5).map { ChallengeUtils.difficultyLevel(it-1) }
@@ -106,7 +96,7 @@ fun ChallengeConfig(
 
                 IconButton(
                     onClick = {
-                        previewData = ChallengeFactory.generateData(challenge.type, difficultyIndex).first
+                        previewData = ChallengeFactory.generateChallengeData(challenge.type, difficultyIndex).first
                     },
                     modifier = Modifier.align(Alignment.BottomEnd)
                 ) {
@@ -128,7 +118,7 @@ fun ChallengeConfig(
             options = difficultyOptions,
             onDifficultyChanged = { index ->
                 difficultyIndex = index
-                previewData = ChallengeFactory.generateData(challenge.type, index).first
+                previewData = ChallengeFactory.generateChallengeData(challenge.type, index).first
             }
         )
 

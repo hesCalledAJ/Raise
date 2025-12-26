@@ -11,7 +11,7 @@ object ChallengeFactory {
         }
     }
 
-    fun generateData(type: ChallengeType, difficulty: Int): Pair<String,Int> {
+    fun generateChallengeData(type: ChallengeType, difficulty: Int): Pair<String,Int> {
         return getProvider(type).generate(difficulty)
     }
 }

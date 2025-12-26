@@ -1,41 +1,45 @@
 package com.alijafari.raise.feature_alarm.presentation.ring
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.BottomSheetDefaults.DragHandle
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.alijafari.raise.core.ui.theme.Wakee2Theme
 import com.alijafari.raise.feature_alarm.data.service.AlarmStatus
 import com.alijafari.raise.feature_alarm.domain.model.Alarm
 import com.alijafari.raise.feature_alarm.presentation.ring.components.DismissBottomSheet
 import com.alijafari.raise.feature_alarm.presentation.ring.components.DraggableAlarmDataContainer
 import com.alijafari.raise.feature_alarm.presentation.ring.components.SnoozeTopShape
 import com.alijafari.raise.feature_alarm.presentation.ring.components.TimeBombPill
+import com.alijafari.raise.feature_challenge.presentation.ChallengeSolvingSheet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -222,6 +226,7 @@ fun RingScreen(
     onDismiss: () -> Unit,
     onSkipSnooze: () -> Unit,
     onInteractionStarted: () -> Unit,
+    viewModel : RingViewModel,
     onSnooze: () -> Unit,
 ) {
     val density = LocalDensity.current
@@ -235,89 +240,17 @@ fun RingScreen(
         onSnooze = onSnooze,
         onInteractionStarted = onInteractionStarted,
         onSkipSnooze = { onSkipSnooze() },
-        onDismiss = { onDismiss() }
+        onDismiss = { if (viewModel.hasChallenges().not()) onDismiss() }
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
     SideEffect {
         state.isSnoozed = alarmStatus is AlarmStatus.Snoozed
     }
 
     val dragOffset by remember { state.dragOffsetState }
     val screenState by state.screenState
+
+    val activeChallenges by viewModel.activeChallenges.collectAsState()
+    val currentChallenge = activeChallenges.firstOrNull()
 
     Surface(modifier = modifier.fillMaxSize()) {
         if (alarm == null) {
@@ -330,7 +263,6 @@ fun RingScreen(
                 dragThresholdPx = dragThresholdPx,
                 alarm = alarm
             )
-
             DraggableAlarmDataContainer(
                 alarm = alarm,
                 isSnoozed = state.isSnoozed,
@@ -373,23 +305,23 @@ fun RingScreen(
                 state = state,
                 onDragDown = state::bottomSheetDragDown,
                 onRelease = state::bottomSheetRelease
-            )
+            ){
+                Log.e("TAG", "ChallengeSolvingSheet: $activeChallenges", )
+                Log.e("TAG", "ChallengeSolvingSheet: $currentChallenge", )
+                if (currentChallenge != null) {
+                    ChallengeSolvingSheet (
+                        challenge = currentChallenge,
+                        onInputEntered = { answer ->
+                            val isCorrect = viewModel.verifyAnswer(answer)
+                            if (!isCorrect) {
+                                // error
+                            } else {
+                                // confetti or something
+                            }
+                        }
+                    )
+                }
+            }
         }
-    }
-}
-
-//
-@Preview(showBackground = true)
-@Composable
-fun RingScreenPreview() {
-    Wakee2Theme {
-        RingScreen(
-            modifier = Modifier,
-            alarm = Alarm(),
-            alarmStatus = AlarmStatus.TimeBombCountDown(20000L, 20000L),
-            onDismiss = {},
-            onInteractionStarted = {},
-            onSkipSnooze = {},
-        ) { }
     }
 }

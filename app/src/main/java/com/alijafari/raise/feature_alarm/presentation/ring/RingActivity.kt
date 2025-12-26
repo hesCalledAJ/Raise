@@ -92,6 +92,7 @@ class RingActivity : ComponentActivity() {
                         onDismiss = { viewModel.onDismiss() },
                         onSnooze = { viewModel.onSnooze() },
                         onInteractionStarted = {viewModel.onUserInteraction()},
+                        viewModel = viewModel,
                         onSkipSnooze = { viewModel.onSkipSnooze() }
                     )
                 }
