@@ -8,9 +8,13 @@ a **Material You** alarm app for Android, being built with **Kotlin** and **Jetp
 ## Screenshots
 
 <div style="display:flex; gap:12px; overflow-x:auto;">
-  <img src="https://github.com/user-attachments/assets/097a075a-ae53-498f-84c5-92edb1a7be54" width="200"/>
-  <img src="https://github.com/user-attachments/assets/2cf546e7-25fe-4e41-a8a2-c446d59fdfa9" width="200"/>
-  <img src="https://github.com/user-attachments/assets/a2018a44-b400-4c1d-8f01-72b4ff826f91" width="200"/>
+  <img src="https://github.com/user-attachments/assets/097a075a-ae53-498f-84c5-92edb1a7be54" width="190"/>
+  <img src="https://github.com/user-attachments/assets/2cf546e7-25fe-4e41-a8a2-c446d59fdfa9" width="190"/>
+  <img src="https://github.com/user-attachments/assets/a2018a44-b400-4c1d-8f01-72b4ff826f91" width="190"/>
+  <img width="190" alt="Screenshot_20251226-191930 Raise" src="https://github.com/user-attachments/assets/3d705fbc-a749-40bb-9b3c-4560a0ac53fc" />
+  <img width="190" alt="Screenshot_20251226-192048 Raise" src="https://github.com/user-attachments/assets/351da51a-0c95-4996-a05a-81b1564c0f81" />
+  <img width="190" alt="Screenshot_20251226-191956 Raise" src="https://github.com/user-attachments/assets/f4bd6852-a03c-4040-8068-26a3a4f8758f" />
+
 
 </div>
 
