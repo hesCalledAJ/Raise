@@ -7,11 +7,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
-        android:name=".core.Wakee"
+        android:name=".core.Raise"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -21,12 +20,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Wakee2">
         <activity
+            android:name=".feature_exceptions.CrashActivity"
+            android:exported="false"
+            android:label="@string/title_activity_crash"
+            android:theme="@style/Theme.Wakee2" />
+        <activity
             android:name=".feature_alarm.presentation.ring.RingActivity"
             android:exported="false"
             android:label="@string/title_activity_ring"
-            android:turnScreenOn="true"
             android:showWhenLocked="true"
-            android:theme="@style/Theme.Wakee2" />
+            android:theme="@style/Theme.Wakee2"
+            android:turnScreenOn="true" />
 
         <receiver
             android:name=".feature_alarm.data.AlarmReceiver"

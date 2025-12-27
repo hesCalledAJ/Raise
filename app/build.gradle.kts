@@ -10,20 +10,19 @@ plugins {
 android {
     namespace = "com.alijafari.raise"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.alijafari.raise"
         minSdk = 24
         targetSdk = 36
-        versionCode = 5
-        versionName = "0.0.5"
+        versionCode = generatedVersionCode
+        versionName = generatedVersionName
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -39,6 +38,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 ksp {
@@ -73,4 +73,5 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
+    implementation("cat.ereza:customactivityoncrash:2.4.0")
 }

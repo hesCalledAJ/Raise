@@ -51,5 +51,6 @@
         <item quantity="one">%d Minute</item>
         <item quantity="other">%d minutes</item>
     </plurals>
+    <string name="title_activity_crash">CrashActivity</string>
 
 </resources>
