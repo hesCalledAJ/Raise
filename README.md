@@ -1,6 +1,6 @@
 <img src="https://github.com/user-attachments/assets/a5fd0ca8-c7dd-436c-be0d-36babed383cd" width="90" />
 
-# Raise ⏰
+# Raise ⏰ 
 a **Material You** alarm app for Android, being built with **Kotlin** and **Jetpack Compose**.  
 
 ![Static Badge](https://img.shields.io/badge/MD3E-green?style=for-the-badge&logo=materialdesign&logoColor=Black&labelColor=%23999&color=Green) ![Static Badge](https://img.shields.io/badge/Kotlin-pink?style=for-the-badge&logo=kotlin&labelColor=%23fff) ![Static Badge](https://img.shields.io/badge/Compose-blue?style=for-the-badge&logo=jetpackcompose&labelColor=%23fff) ![Static Badge](https://img.shields.io/badge/API%2024%2B-green?style=for-the-badge&logo=android&labelColor=%23fff)
